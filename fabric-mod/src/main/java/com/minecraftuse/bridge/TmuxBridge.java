@@ -112,22 +112,8 @@ public class TmuxBridge {
                 previousRead = currentRead;
             }
 
-            // 6. Return only the new lines (diff from before)
-            String[] beforeLines = before.split("\n");
-            String[] currentLines = currentRead.split("\n");
-            if (currentLines.length > beforeLines.length) {
-                StringBuilder newOutput = new StringBuilder();
-                for (int i = beforeLines.length; i < currentLines.length; i++) {
-                    String line = currentLines[i].trim();
-                    // Skip empty lines and the Claude Code prompt character
-                    if (!line.isEmpty() && !line.equals(">")) {
-                        newOutput.append(line).append("\n");
-                    }
-                }
-                String result = newOutput.toString().trim();
-                return result.isEmpty() ? "(no new output)" : result;
-            }
-            return "(no new output)";
+            // 6. Return the full current output — callers handle filtering
+            return currentRead.trim();
         });
     }
 
