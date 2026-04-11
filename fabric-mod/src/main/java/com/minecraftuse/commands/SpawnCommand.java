@@ -43,7 +43,11 @@ public class SpawnCommand {
         );
     }
 
+    private static final String DEFAULT_COMMAND = "lfg";
+
     private static int executeSpawn(FabricClientCommandSource source, String name, String command) {
+        // Default to lfg (Claude Code) if no command specified
+        final String finalCommand = (command == null || command.isBlank()) ? DEFAULT_COMMAND : command;
         VillagerRegistry registry = VillagerRegistry.getInstance();
 
         if (registry.contains(name)) {
@@ -71,8 +75,9 @@ public class SpawnCommand {
                     runProcess(List.of(TMUX_PATH, "new-window", "-t", TMUX_SESSION, "-n", AGENTS_WINDOW));
                 }
 
-                // Create a new pane in the agents window
-                runProcess(List.of(TMUX_PATH, "split-window", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW, "-h"));
+                // Create a new pane in the agents window and apply tiled layout
+                runProcess(List.of(TMUX_PATH, "split-window", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW));
+                runProcess(List.of(TMUX_PATH, "select-layout", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW, "tiled"));
 
                 // Capture new pane ID from the agents window
                 String paneId = runProcess(List.of(
@@ -89,13 +94,11 @@ public class SpawnCommand {
                 PaneConfig config = PaneConfig.load(new File("."));
                 TmuxBridge bridge = new TmuxBridge(config.getTmuxSocket());
 
-                // Optionally run a command in the pane
-                if (command != null && !command.isBlank()) {
-                    bridge.read(name).get();
-                    bridge.type(name, command).get();
-                    bridge.read(name).get();
-                    bridge.keys(name, "Enter").get();
-                }
+                // Run command in the pane
+                bridge.read(name).get();
+                bridge.type(name, finalCommand).get();
+                bridge.read(name).get();
+                bridge.keys(name, "Enter").get();
 
                 // Spawn the villager on the main thread
                 MinecraftClient client = MinecraftClient.getInstance();
