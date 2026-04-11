@@ -1,7 +1,29 @@
 {
   "agent_death": {
-    "sounds": [
-      "minecraft-use:agent_death"
-    ]
+    "sounds": ["minecraft-use:agent_death"]
+  },
+  "alex_spawn": {
+    "sounds": ["minecraft-use:alex_spawn"]
+  },
+  "gregor_spawn": {
+    "sounds": ["minecraft-use:gregor_spawn"]
+  },
+  "gregor2_spawn": {
+    "sounds": ["minecraft-use:gregor2_spawn"]
+  },
+  "aitor_spawn": {
+    "sounds": ["minecraft-use:aitor_spawn"]
+  },
+  "magnus_spawn": {
+    "sounds": ["minecraft-use:magnus_spawn"]
+  },
+  "shawn_spawn": {
+    "sounds": ["minecraft-use:shawn_spawn"]
+  },
+  "larsen_spawn": {
+    "sounds": ["minecraft-use:larsen_spawn"]
+  },
+  "reagan_whats_up_picka_spawn": {
+    "sounds": ["minecraft-use:reagan_whats_up_picka_spawn"]
   }
 }
