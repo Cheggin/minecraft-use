@@ -50,13 +50,22 @@ function MainMenu({ onNavigate }: { onNavigate: (page: Page) => void }) {
   const [splash] = useState(getRandomSplash);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden select-none mc-panorama">
+    <div className="relative w-screen h-screen overflow-hidden select-none">
+      {/* Background image */}
+      <img
+        src="/minecraft-bg.webp"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ imageRendering: "auto", filter: "blur(3px) brightness(0.7)", transform: "scale(1.05)" }}
+      />
+      <div className="absolute inset-0 bg-black/25" />
+
       <div className="relative z-10 flex flex-col items-center justify-between h-full py-6">
         {/* Title */}
-        <div className="flex flex-col items-center mt-12 relative">
+        <div className="flex flex-col items-center mt-6 relative">
           <TitleLogo />
-          <div className="absolute -right-16 top-12">
-            <span className="mc-splash text-base whitespace-nowrap block">
+          <div className="absolute -right-20 top-14">
+            <span className="mc-splash text-lg whitespace-nowrap block">
               {splash}
             </span>
           </div>
@@ -234,13 +243,13 @@ function TitleLogo() {
     <div className="flex flex-col items-center">
       <h1
         className="mc-title font-bold leading-none"
-        style={{ fontSize: "clamp(36px, 8vw, 72px)" }}
+        style={{ fontSize: "clamp(48px, 12vw, 96px)" }}
       >
         MINECRAFT
       </h1>
       <span
-        className="mc-subtitle leading-none -mt-1"
-        style={{ fontSize: "clamp(16px, 3.5vw, 28px)" }}
+        className="mc-subtitle leading-none mt-1"
+        style={{ fontSize: "clamp(20px, 5vw, 40px)" }}
       >
         — USE —
       </span>
@@ -248,8 +257,8 @@ function TitleLogo() {
         className="mt-3 text-center"
         style={{
           fontFamily: "var(--font-minecraft)",
-          fontSize: "11px",
-          color: "#bbbbbb",
+          fontSize: "12px",
+          color: "#cccccc",
           textShadow: "1px 1px 0px #3f3f3f",
         }}
       >
