@@ -42,7 +42,13 @@ export const listSchematics = query({
   },
   handler: async (ctx, args) => {
     const limit = args.count ?? 50;
-    return await ctx.db.query("schematics").order("desc").take(limit);
+    const schematics = await ctx.db.query("schematics").order("desc").take(limit);
+    return await Promise.all(
+      schematics.map(async (s) => {
+        const url = await ctx.storage.getUrl(s.fileId);
+        return { ...s, fileUrl: url };
+      })
+    );
   },
 });
 
@@ -74,5 +80,18 @@ export const getSchematicFile = query({
     if (!schematic) return null;
     const url = await ctx.storage.getUrl(schematic.fileId);
     return { ...schematic, fileUrl: url };
+  },
+});
+
+export const getSchematicByFileName = query({
+  args: {
+    fileName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const schematics = await ctx.db.query("schematics").collect();
+    const match = schematics.find((s) => s.fileName === args.fileName);
+    if (!match) return null;
+    const url = await ctx.storage.getUrl(match.fileId);
+    return { ...match, fileUrl: url };
   },
 });

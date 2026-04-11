@@ -2,6 +2,7 @@ package com.minecraftuse;
 
 import com.minecraftuse.commands.BrowserUseCommand;
 import com.minecraftuse.commands.BuildCommand;
+import com.minecraftuse.commands.CatalogCommand;
 import com.minecraftuse.commands.ClaudeCommand;
 import com.minecraftuse.commands.DespawnCommand;
 import com.minecraftuse.commands.DownloadCommand;
@@ -36,10 +37,12 @@ public class MinecraftUseMod implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         LOGGER.info("Minecraft Use mod initializing...");
+        ModSounds.register();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             BrowserUseCommand.register(dispatcher);
             BuildCommand.register(dispatcher);
+            CatalogCommand.register(dispatcher);
             ClaudeCommand.register(dispatcher);
             DespawnCommand.register(dispatcher);
             DownloadCommand.register(dispatcher);
