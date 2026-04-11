@@ -25,12 +25,17 @@ function getRandomSplash() {
 export default function App() {
   const [page, setPage] = useState<Page>("menu");
 
+  const navigate = (target: Page) => {
+    console.log(`[navigate] ${page} → ${target}`);
+    setPage(target);
+  };
+
   if (page === "menu") {
-    return <MainMenu onNavigate={setPage} />;
+    return <MainMenu onNavigate={navigate} />;
   }
 
   return (
-    <PageShell title={PAGE_TITLES[page]} onBack={() => setPage("menu")}>
+    <PageShell title={PAGE_TITLES[page]} onBack={() => navigate("menu")}>
       {page === "schematics" && <SchematicsPage />}
       {page === "catalog" && <CatalogPage />}
       {page === "settings" && <SettingsPage />}
