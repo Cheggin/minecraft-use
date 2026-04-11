@@ -30,3 +30,4 @@ sidecar/schema_cache/*.nbt
 .ui-loop/
 fabric-mod/run/
 .omc/
+__pycache__/
