@@ -70,8 +70,9 @@ public class FloatingText {
         int startIndex = Math.max(0, wrappedLines.size() - MAX_LINES);
         List<String> displayLines = wrappedLines.subList(startIndex, wrappedLines.size());
 
+        // Assign lines in reverse: first line of text goes to highest stand
         for (int i = 0; i < stands.size(); i++) {
-            ArmorStandEntity stand = stands.get(i);
+            ArmorStandEntity stand = stands.get(stands.size() - 1 - i);
             if (i < displayLines.size()) {
                 stand.setCustomName(Text.literal(displayLines.get(i)));
                 stand.setCustomNameVisible(true);
