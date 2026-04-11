@@ -5,26 +5,19 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.minecraftuse.MinecraftUseMod;
-import com.minecraftuse.schematic.SchematicParser;
-import com.minecraftuse.schematic.SchematicPlacer;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 public class BuildCommand {
 
@@ -42,9 +35,8 @@ public class BuildCommand {
                     }))
                 .then(ClientCommandManager.argument("name", StringArgumentType.greedyString())
                     .executes(context -> {
-                        String args = StringArgumentType.getString(context, "name");
-                        FabricClientCommandSource source = context.getSource();
-                        executeBuild(source, args);
+                        String name = StringArgumentType.getString(context, "name");
+                        executeBuild(context.getSource(), name);
                         return 1;
                     }))
         );
@@ -94,7 +86,7 @@ public class BuildCommand {
                     sendFeedback(source, "§a  " + label + " §7- " + name + " §8(" + category + ", " + fileSize + " bytes)");
                 }
 
-                sendFeedback(source, "§7Use: /build <filename> to place");
+                sendFeedback(source, "§7Use: /build <filename> to download for Litematica");
 
             } catch (Exception e) {
                 sendFeedback(source, "§e[MCUse] §cError: " + e.getMessage());
@@ -104,34 +96,14 @@ public class BuildCommand {
         thread.start();
     }
 
-    private static void executeBuild(FabricClientCommandSource source, String args) {
-        // Parse flags from args: --swap old=new
-        Map<String, String> swapMap = new HashMap<>();
-        String[] parts = args.split("\\s+");
-        StringBuilder nameBuilder = new StringBuilder();
+    private static void executeBuild(FabricClientCommandSource source, String name) {
+        source.sendFeedback(Text.literal("§e[MCUse] §fDownloading schematic: §a" + name + "§f..."));
 
-        for (int i = 0; i < parts.length; i++) {
-            if (parts[i].equals("--swap") && i + 1 < parts.length) {
-                String[] swapParts = parts[i + 1].split("=", 2);
-                if (swapParts.length == 2) {
-                    swapMap.put(swapParts[0], swapParts[1]);
-                }
-                i++;
-            } else if (!parts[i].startsWith("--")) {
-                if (nameBuilder.length() > 0) nameBuilder.append(' ');
-                nameBuilder.append(parts[i]);
-            }
-        }
-
-        String name = nameBuilder.length() > 0 ? nameBuilder.toString() : args;
-        source.sendFeedback(Text.literal("§e[MCUse] §fBuilding schematic: §a" + name + "§f..."));
-
-        // Download from Convex and place
         Thread thread = new Thread(() -> {
             try {
-                // Query Convex for the schematic by filename
                 String fileName = name.endsWith(".schem") ? name : name + ".schem";
 
+                // Query Convex for the schematic
                 JsonObject body = new JsonObject();
                 body.addProperty("path", "schematics:getSchematicByFileName");
                 JsonObject queryArgs = new JsonObject();
@@ -162,6 +134,7 @@ public class BuildCommand {
                 JsonObject schematic = value.getAsJsonObject();
                 String fileUrl = schematic.has("fileUrl") && !schematic.get("fileUrl").isJsonNull()
                     ? schematic.get("fileUrl").getAsString() : null;
+                String schematicName = schematic.has("name") ? schematic.get("name").getAsString() : fileName;
 
                 if (fileUrl == null || fileUrl.isEmpty()) {
                     sendFeedback(source, "§e[MCUse] §cNo download URL for schematic: " + fileName);
@@ -178,31 +151,16 @@ public class BuildCommand {
                 HttpResponse<byte[]> dlResponse = HTTP.send(dlRequest, HttpResponse.BodyHandlers.ofByteArray());
                 byte[] fileBytes = dlResponse.body();
 
-                // Save to local cache
+                // Save to Litematica's schematics folder
                 MinecraftClient client = MinecraftClient.getInstance();
-                Path cacheDir = client.runDirectory.toPath().resolve("minecraftuse/cache");
-                Files.createDirectories(cacheDir);
-                Path localFile = cacheDir.resolve(fileName);
+                Path schematicsDir = client.runDirectory.toPath().resolve("schematics");
+                Files.createDirectories(schematicsDir);
+                Path localFile = schematicsDir.resolve(fileName);
                 Files.write(localFile, fileBytes);
 
-                sendFeedback(source, "§e[MCUse] §7Downloaded " + fileBytes.length + " bytes. Placing...");
-
-                // Parse and place on main thread
-                SchematicParser.Schematic parsed = SchematicParser.parse(localFile.toFile());
-
-                final Map<String, String> finalSwapMap = swapMap;
-                client.execute(() -> {
-                    if (client.player == null) return;
-                    BlockPos origin = client.player.getBlockPos();
-
-                    if (!finalSwapMap.isEmpty()) {
-                        SchematicPlacer.placeWithSwap(parsed, origin, finalSwapMap, source);
-                    } else {
-                        SchematicPlacer.place(parsed, origin, null, source);
-                    }
-
-                    source.sendFeedback(Text.literal("§e[MCUse] §aPlaced: " + name));
-                });
+                sendFeedback(source, "§e[MCUse] §aDownloaded: §f" + schematicName + " §7(" + fileBytes.length + " bytes)");
+                sendFeedback(source, "§e[MCUse] §7Saved to: §fschematics/" + fileName);
+                sendFeedback(source, "§e[MCUse] §7Open Litematica (§fM key§7) → §fSchematic Browser §7→ load and place");
 
             } catch (Exception e) {
                 sendFeedback(source, "§e[MCUse] §cBuild failed: " + e.getMessage());
