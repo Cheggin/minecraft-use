@@ -22,6 +22,7 @@ public class OutputPoller {
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicReference<List<String>> lastLines = new AtomicReference<>(Collections.emptyList());
+    private volatile List<String> lastDisplayedLines = Collections.emptyList();
     private Thread pollThread;
 
     public OutputPoller(TmuxBridge bridge, String paneName, FloatingText floatingText) {
@@ -94,8 +95,15 @@ public class OutputPoller {
                             }
                         }
 
-                        final List<String> floatingLines = agentLines;
-                        final boolean hasNewResponse = !agentLines.isEmpty();
+                        // Show "thinking..." if no agent response yet
+                        final List<String> floatingLines;
+                        if (agentLines.isEmpty()) {
+                            floatingLines = List.of("thinking...");
+                        } else {
+                            floatingLines = agentLines;
+                        }
+                        final boolean hasNewResponse = !agentLines.isEmpty() && !agentLines.equals(lastDisplayedLines);
+                        lastDisplayedLines = agentLines;
                         MinecraftClient client = MinecraftClient.getInstance();
                         if (client != null) {
                             client.execute(() -> {

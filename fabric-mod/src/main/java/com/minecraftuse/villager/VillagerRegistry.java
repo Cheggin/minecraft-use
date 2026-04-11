@@ -81,7 +81,7 @@ public class VillagerRegistry {
         for (Map.Entry<String, AgentVillagerData> entry : byName.entrySet()) {
             AgentVillagerData data = entry.getValue();
             if (data.villager().isAlive()) {
-                data.floatingText().tick(data.villager().getPos().add(0, 2.2, 0));
+                data.floatingText().tick(data.villager().getPos().add(0, 0.5, 0));
             } else {
                 dead.add(entry.getKey());
             }

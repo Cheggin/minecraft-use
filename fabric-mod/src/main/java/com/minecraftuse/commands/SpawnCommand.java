@@ -127,7 +127,7 @@ public class SpawnCommand {
                     Vec3d spawnPos = client.player.getPos().add(2, 0, 0);
 
                     FloatingText floatingText = new FloatingText(serverWorld);
-                    floatingText.spawn(spawnPos.add(0, 2.2, 0));
+                    floatingText.spawn(spawnPos.add(0, 0.5, 0));
 
                     AgentVillager agent = AgentVillager.spawn(serverWorld, spawnPos, name, finalMobType);
 
