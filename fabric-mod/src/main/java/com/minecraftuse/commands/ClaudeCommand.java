@@ -67,17 +67,64 @@ public class ClaudeCommand {
 
     private static void displayResponse(FabricClientCommandSource source, String response) {
         String[] lines = response.split("\n");
-        List<String> lineList = Arrays.asList(lines);
 
-        int total = lineList.size();
+        // Filter out Claude Code chrome (same as OutputPoller)
+        List<String> filtered = Arrays.stream(lines)
+            .map(String::trim)
+            .filter(line -> !line.isEmpty())
+            .filter(line -> !line.matches("^[\\u2500-\\u257F\\-]{3,}$"))
+            .filter(line -> !line.startsWith("[OMC#"))
+            .filter(line -> !line.contains("bypass permissions"))
+            .filter(line -> !line.contains("shift+tab to cycle"))
+            .filter(line -> !line.contains("Claude Code v"))
+            .filter(line -> !line.contains("Claude Max"))
+            .filter(line -> !line.contains("/remote-control"))
+            .filter(line -> !line.contains("session:"))
+            .filter(line -> !line.contains("context)"))
+            .filter(line -> !line.contains("claude.ai/code/"))
+            .filter(line -> !line.contains("Code in CLI"))
+            .filter(line -> !line.contains("active ·"))
+            .filter(line -> !line.contains("MCP server"))
+            .filter(line -> !line.contains("/mcp"))
+            .filter(line -> !line.startsWith("~/"))
+            .filter(line -> !line.equals(">"))
+            .filter(line -> !line.equals("❯"))
+            .filter(line -> !line.equals(")"))
+            .filter(line -> line.chars().filter(c -> c > 0x2500).count() < line.length() / 2)
+            .collect(java.util.stream.Collectors.toList());
+
+        // Extract only the last agent response (lines starting with ● or ⏺)
+        List<String> agentLines = new java.util.ArrayList<>();
+        int lastAgentStart = -1;
+        for (int i = filtered.size() - 1; i >= 0; i--) {
+            String l = filtered.get(i);
+            if (l.startsWith("●") || l.startsWith("⏺")) {
+                lastAgentStart = i;
+                break;
+            }
+            if (l.startsWith("❯") || l.startsWith("> ")) break;
+        }
+        if (lastAgentStart >= 0) {
+            for (int i = lastAgentStart; i < filtered.size(); i++) {
+                String l = filtered.get(i);
+                if (i > lastAgentStart && (l.startsWith("❯") || l.startsWith("> "))) break;
+                agentLines.add(l);
+            }
+        } else {
+            agentLines = filtered;
+        }
+
+        if (agentLines.isEmpty()) {
+            source.sendFeedback(Text.literal("§e[MCUse] §7(no response from Claude)"));
+            return;
+        }
+
+        int total = agentLines.size();
         int shown = Math.min(total, MAX_DISPLAY_LINES);
 
         source.sendFeedback(Text.literal("§e[MCUse] §bClaude:"));
         for (int i = 0; i < shown; i++) {
-            String line = lineList.get(i);
-            if (!line.isBlank()) {
-                source.sendFeedback(Text.literal("§f  " + line));
-            }
+            source.sendFeedback(Text.literal("§f  " + agentLines.get(i)));
         }
 
         if (total > MAX_DISPLAY_LINES) {
