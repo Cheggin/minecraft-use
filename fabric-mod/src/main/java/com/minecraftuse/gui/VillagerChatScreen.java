@@ -89,6 +89,7 @@ public class VillagerChatScreen extends Screen {
         TmuxBridge bridge = new TmuxBridge(config.getTmuxSocket());
 
         bridge.type(paneName, message)
+            .thenCompose(ignored -> bridge.read(paneName))
             .thenCompose(ignored -> bridge.keys(paneName, "Enter"))
             .exceptionally(err -> {
                 MinecraftClient client = MinecraftClient.getInstance();

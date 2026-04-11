@@ -91,7 +91,9 @@ public class SpawnCommand {
 
                 // Optionally run a command in the pane
                 if (command != null && !command.isBlank()) {
+                    bridge.read(name).get();
                     bridge.type(name, command).get();
+                    bridge.read(name).get();
                     bridge.keys(name, "Enter").get();
                 }
 
