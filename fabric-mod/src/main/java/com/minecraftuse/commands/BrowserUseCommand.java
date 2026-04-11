@@ -60,25 +60,55 @@ public class BrowserUseCommand {
                     return;
                 }
 
-                boolean done = trimmed.contains(DONE_SENTINEL);
                 String[] lines = trimmed.split("\n");
-                int shown = Math.min(lines.length, MAX_OUTPUT_LINES);
 
-                source.sendFeedback(Text.literal("§e[MCUse] §bBrowser:"));
-                for (int i = 0; i < shown; i++) {
-                    String line = lines[i];
-                    if (!line.isBlank()) {
-                        source.sendFeedback(Text.literal("§f  " + line));
+                // Parse output — only look at lines after the last ">>> " prompt
+                String liveUrl = null;
+                java.util.List<String> contentLines = new java.util.ArrayList<>();
+                boolean done = false;
+                boolean foundPrompt = false;
+
+                // Find the last ">>> " prompt and only process lines after it
+                int lastPromptIndex = -1;
+                for (int i = lines.length - 1; i >= 0; i--) {
+                    if (lines[i].trim().startsWith(">>>")) {
+                        lastPromptIndex = i;
+                        break;
                     }
                 }
 
-                if (lines.length > MAX_OUTPUT_LINES) {
-                    int remaining = lines.length - MAX_OUTPUT_LINES;
-                    source.sendFeedback(Text.literal("§7  ... " + remaining + " more line" + (remaining == 1 ? "" : "s")));
+                int startFrom = lastPromptIndex >= 0 ? lastPromptIndex + 1 : 0;
+                for (int i = startFrom; i < lines.length; i++) {
+                    String l = lines[i].trim();
+                    if (l.startsWith("TASK_STARTED:")) {
+                        liveUrl = l.substring("TASK_STARTED:".length()).trim();
+                    } else if (l.equals(DONE_SENTINEL)) {
+                        done = true;
+                    } else if (!l.isEmpty() && !l.startsWith(">>>")) {
+                        contentLines.add(l);
+                    }
+                }
+
+                // Show live URL if found
+                if (liveUrl != null) {
+                    source.sendFeedback(Text.literal("§e[MCUse] §7Task started: §9§n" + liveUrl));
+                }
+
+                // Show output
+                if (!contentLines.isEmpty()) {
+                    int shown = Math.min(contentLines.size(), MAX_OUTPUT_LINES);
+                    source.sendFeedback(Text.literal("§e[MCUse] §bBrowser:"));
+                    for (int i = 0; i < shown; i++) {
+                        source.sendFeedback(Text.literal("§f  " + contentLines.get(i)));
+                    }
+                    if (contentLines.size() > MAX_OUTPUT_LINES) {
+                        int remaining = contentLines.size() - MAX_OUTPUT_LINES;
+                        source.sendFeedback(Text.literal("§7  ... " + remaining + " more line" + (remaining == 1 ? "" : "s")));
+                    }
                 }
 
                 if (done) {
-                    source.sendFeedback(Text.literal("§e[MCUse] §aBrowser task complete."));
+                    source.sendFeedback(Text.literal("§e[MCUse] §aTask finished."));
                 } else {
                     source.sendFeedback(Text.literal("§e[MCUse] §7(task still running — use /tmux-read browser to check)"));
                 }
