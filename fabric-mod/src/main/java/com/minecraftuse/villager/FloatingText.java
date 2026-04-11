@@ -10,9 +10,9 @@ import java.util.List;
 
 public class FloatingText {
 
-    private static final int MAX_LINES = 4;
+    private static final int MAX_LINES = 6;
     private static final double LINE_SPACING = 0.3;
-    private static final int MAX_LINE_LENGTH = 40;
+    private static final int MAX_LINE_LENGTH = 60;
 
     private final ServerWorld world;
     private final List<ArmorStandEntity> stands = new ArrayList<>();
@@ -44,18 +44,36 @@ public class FloatingText {
     }
 
     public void update(List<String> lines) {
-        // Show last MAX_LINES lines
-        int startIndex = Math.max(0, lines.size() - MAX_LINES);
-        List<String> displayLines = lines.subList(startIndex, lines.size());
+        // Wrap long lines across multiple stands
+        List<String> wrappedLines = new ArrayList<>();
+        for (String line : lines) {
+            if (line.length() <= MAX_LINE_LENGTH) {
+                wrappedLines.add(line);
+            } else {
+                // Word-wrap at MAX_LINE_LENGTH
+                while (line.length() > MAX_LINE_LENGTH) {
+                    int cutIndex = MAX_LINE_LENGTH;
+                    int spaceIndex = line.lastIndexOf(' ', cutIndex);
+                    if (spaceIndex > MAX_LINE_LENGTH / 2) {
+                        cutIndex = spaceIndex;
+                    }
+                    wrappedLines.add(line.substring(0, cutIndex));
+                    line = line.substring(cutIndex).trim();
+                }
+                if (!line.isEmpty()) {
+                    wrappedLines.add(line);
+                }
+            }
+        }
+
+        // Show last MAX_LINES wrapped lines
+        int startIndex = Math.max(0, wrappedLines.size() - MAX_LINES);
+        List<String> displayLines = wrappedLines.subList(startIndex, wrappedLines.size());
 
         for (int i = 0; i < stands.size(); i++) {
             ArmorStandEntity stand = stands.get(i);
             if (i < displayLines.size()) {
-                String line = displayLines.get(i);
-                if (line.length() > MAX_LINE_LENGTH) {
-                    line = line.substring(0, MAX_LINE_LENGTH);
-                }
-                stand.setCustomName(Text.literal(line));
+                stand.setCustomName(Text.literal(displayLines.get(i)));
                 stand.setCustomNameVisible(true);
             } else {
                 stand.setCustomName(Text.literal(""));
