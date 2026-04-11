@@ -24,6 +24,7 @@ import java.util.List;
 public class SpawnCommand {
 
     private static final String TMUX_BRIDGE_PATH = System.getProperty("user.home") + "/.smux/bin/tmux-bridge";
+    private static final String TMUX_PATH = "/opt/homebrew/bin/tmux";
     private static final String HOMEBREW_BIN = "/opt/homebrew/bin";
     private static final int PROCESS_TIMEOUT_SECONDS = 10;
     private static final String TMUX_SESSION = "minecraft-use";
@@ -61,21 +62,21 @@ public class SpawnCommand {
             try {
                 // Ensure the agents window exists in the minecraft-use session
                 String existingWindows = runProcess(List.of(
-                    "tmux", "list-windows", "-t", TMUX_SESSION, "-F", "#{window_name}"
+                    TMUX_PATH, "list-windows", "-t", TMUX_SESSION, "-F", "#{window_name}"
                 ));
                 boolean agentsWindowExists = existingWindows.lines()
                     .anyMatch(line -> line.trim().equals(AGENTS_WINDOW));
 
                 if (!agentsWindowExists) {
-                    runProcess(List.of("tmux", "new-window", "-t", TMUX_SESSION, "-n", AGENTS_WINDOW));
+                    runProcess(List.of(TMUX_PATH, "new-window", "-t", TMUX_SESSION, "-n", AGENTS_WINDOW));
                 }
 
                 // Create a new pane in the agents window
-                runProcess(List.of("tmux", "split-window", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW, "-h"));
+                runProcess(List.of(TMUX_PATH, "split-window", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW, "-h"));
 
                 // Capture new pane ID from the agents window
                 String paneId = runProcess(List.of(
-                    "tmux", "display-message", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW, "-p", "#{pane_id}"
+                    TMUX_PATH, "display-message", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW, "-p", "#{pane_id}"
                 )).trim();
                 if (paneId.isEmpty()) {
                     sendFeedbackOnMain(source, "§e[MCUse] §cFailed to get tmux pane ID.");

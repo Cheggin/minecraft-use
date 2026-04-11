@@ -43,7 +43,7 @@ public class DespawnCommand {
         Thread despawnThread = new Thread(() -> {
             try {
                 // Use tmux kill-pane by pane name target
-                ProcessBuilder pb = new ProcessBuilder("tmux", "kill-pane", "-t", paneName);
+                ProcessBuilder pb = new ProcessBuilder("/opt/homebrew/bin/tmux", "kill-pane", "-t", paneName);
                 pb.redirectErrorStream(true);
 
                 String currentPath = pb.environment().getOrDefault("PATH", "/usr/bin:/bin");
