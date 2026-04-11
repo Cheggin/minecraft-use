@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 type Page = "menu" | "schematics" | "catalog" | "settings" | "about";
 
@@ -176,7 +176,43 @@ function SchematicsPage() {
   );
 }
 
+const CATALOG_ITEMS = [
+  { name: "Medieval Watchtower", category: "Castle", dims: "15x32x15", blocks: 3200 },
+  { name: "Stone Keep", category: "Castle", dims: "20x18x20", blocks: 6100 },
+  { name: "Modern Villa", category: "House", dims: "30x12x25", blocks: 8100 },
+  { name: "Dark Fantasy Tower", category: "Tower", dims: "12x45x12", blocks: 5400 },
+  { name: "Cozy Cottage", category: "House", dims: "10x8x12", blocks: 1200 },
+  { name: "Grand Cathedral", category: "Medieval", dims: "40x55x30", blocks: 42000 },
+  { name: "Redstone Bunker", category: "Modern", dims: "18x10x18", blocks: 2800 },
+  { name: "Elven Treehouse", category: "Tower", dims: "22x38x22", blocks: 7200 },
+  { name: "Japanese Pagoda", category: "Tower", dims: "16x28x16", blocks: 4500 },
+  { name: "Viking Longhouse", category: "House", dims: "35x10x14", blocks: 3900 },
+];
+
+const CATEGORIES = ["All", ...Array.from(new Set(CATALOG_ITEMS.map((s) => s.category)))];
+
+function fuzzyMatch(text: string, query: string): boolean {
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  let qi = 0;
+  for (let i = 0; i < lower.length && qi < q.length; i++) {
+    if (lower[i] === q[qi]) qi++;
+  }
+  return qi === q.length;
+}
+
 function CatalogPage() {
+  const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
+
+  const filtered = useMemo(() => {
+    return CATALOG_ITEMS.filter((item) => {
+      const matchesCategory = activeCategory === "All" || item.category === activeCategory;
+      const matchesSearch = !search || fuzzyMatch(item.name, search) || fuzzyMatch(item.category, search);
+      return matchesCategory && matchesSearch;
+    });
+  }, [search, activeCategory]);
+
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="w-full max-w-[620px]">
@@ -184,24 +220,31 @@ function CatalogPage() {
           type="text"
           placeholder="Search schematics..."
           className="mc-input w-full"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
       <div className="flex gap-2 flex-wrap justify-center">
-        {["All", "Castle", "House", "Tower", "Medieval", "Modern"].map((cat) => (
-          <button key={cat} className="mc-tag">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            className={`mc-tag ${activeCategory === cat ? "mc-tag-active" : ""}`}
+            onClick={() => setActiveCategory(cat)}
+          >
             {cat}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-3 w-full max-w-[620px]">
-        <SchematicCard name="Medieval Watchtower" category="Castle" dims="15x32x15" blocks={3200} />
-        <SchematicCard name="Stone Keep" category="Castle" dims="20x18x20" blocks={6100} />
-        <SchematicCard name="Modern Villa" category="House" dims="30x12x25" blocks={8100} />
-        <SchematicCard name="Dark Fantasy Tower" category="Tower" dims="12x45x12" blocks={5400} />
-        <SchematicCard name="Cozy Cottage" category="House" dims="10x8x12" blocks={1200} />
-        <SchematicCard name="Grand Cathedral" category="Medieval" dims="40x55x30" blocks={42000} />
+        {filtered.length === 0 ? (
+          <p className="mc-page-text-dim text-center py-8">No schematics found</p>
+        ) : (
+          filtered.map((item) => (
+            <SchematicCard key={item.name} {...item} />
+          ))
+        )}
       </div>
     </div>
   );

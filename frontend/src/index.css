@@ -48,8 +48,13 @@ body {
     linear-gradient(135deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.04) 75%, transparent 75%) 0 0 / 16px 16px;
   border: 3px solid #000000;
   outline: none;
-  padding: 12px 24px;
+  padding: 8px 24px 8px;
+  padding-top: 12px;
   min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   cursor: pointer;
   position: relative;
   text-align: center;
@@ -157,7 +162,7 @@ body {
   box-shadow:
     inset 2px 2px 0px #aaaaaa,
     inset -2px -2px 0px #555555;
-  padding: 12px 16px;
+  padding: 16px 20px;
   cursor: pointer;
   overflow: visible;
 }
@@ -172,14 +177,14 @@ body {
 
 .mc-card-title {
   font-family: var(--font-minecraft);
-  font-size: 12px;
+  font-size: 16px;
   color: #e0e0e0;
-  text-shadow: 1px 1px 0px #383838;
+  text-shadow: 2px 2px 0px #383838;
 }
 
 .mc-card-meta {
   font-family: var(--font-minecraft);
-  font-size: 10px;
+  font-size: 12px;
   color: #bbbbbb;
   text-shadow: 1px 1px 0px #383838;
 }
@@ -248,6 +253,15 @@ body {
   box-shadow:
     inset 1px 1px 0px #c0c0c0,
     inset -1px -1px 0px #606060;
+}
+
+.mc-tag-active {
+  background-color: #6a6a6a;
+  color: #ffffa0;
+  border-color: #ffffff;
+  box-shadow:
+    inset 1px 1px 0px #505050,
+    inset -1px -1px 0px #888888;
 }
 
 /* ===== PAGE TEXT ===== */
