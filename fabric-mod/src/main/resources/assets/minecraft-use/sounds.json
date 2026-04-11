@@ -1,0 +1,7 @@
+{
+  "agent_death": {
+    "sounds": [
+      "minecraft-use:agent_death"
+    ]
+  }
+}

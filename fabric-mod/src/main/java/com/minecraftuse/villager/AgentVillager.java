@@ -5,6 +5,8 @@ import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.village.VillagerProfession;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.village.VillagerData;
@@ -40,7 +42,6 @@ public class AgentVillager {
 
         villager.setInvulnerable(true);
         villager.setNoGravity(false);
-        villager.setSilent(true);
 
         // goalSelector is protected — access via reflection
         try {
@@ -55,6 +56,11 @@ public class AgentVillager {
         }
 
         world.spawnEntity(villager);
+
+        // Play spawn sound
+        world.playSound(null, villager.getBlockPos(),
+            SoundEvents.ENTITY_VILLAGER_CELEBRATE,
+            SoundCategory.NEUTRAL, 1.0f, 1.0f);
 
         return new AgentVillager(villager, name);
     }

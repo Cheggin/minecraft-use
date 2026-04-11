@@ -2,6 +2,7 @@ package com.minecraftuse.villager;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.passive.VillagerEntity;
+import com.minecraftuse.ModSounds;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
@@ -106,9 +107,11 @@ public class VillagerRegistry {
                         killPb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
                     }
                 } catch (Exception ignored) {}
-                // Show death message
+                // Play death sound and show message
                 MinecraftClient client = MinecraftClient.getInstance();
                 if (client != null && client.player != null) {
+                    client.player.playSound(
+                        ModSounds.AGENT_DEATH, 5.0f, 1.0f);
                     client.player.sendMessage(
                         Text.literal("§e[MCUse] §cDespawned agent: §f" + name + " §7(villager died)"),
                         false

@@ -2,8 +2,8 @@ package com.minecraftuse.villager;
 
 import com.minecraftuse.bridge.AnsiStripper;
 import com.minecraftuse.bridge.TmuxBridge;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.sound.SoundEvents;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -95,9 +95,17 @@ public class OutputPoller {
                         }
 
                         final List<String> floatingLines = agentLines;
+                        final boolean hasNewResponse = !agentLines.isEmpty();
                         MinecraftClient client = MinecraftClient.getInstance();
                         if (client != null) {
-                            client.execute(() -> floatingText.update(floatingLines));
+                            client.execute(() -> {
+                                floatingText.update(floatingLines);
+                                // Play sound when new response arrives
+                                if (hasNewResponse && client.player != null) {
+                                    client.player.playSound(
+                                        SoundEvents.ENTITY_VILLAGER_YES, 0.5f, 1.2f);
+                                }
+                            });
                         }
                     }
 
