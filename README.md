@@ -1,13 +1,14 @@
 # Minecraft-Use
 
-An in-game AI agent and schematic catalog for Minecraft. Spawn AI villagers that browse the web, search for schematics, and place builds — all without leaving the game.
+Claude Code, inside Minecraft. Spawn AI villagers that can code, browse the web, find schematics, and build them in your world — all from in-game chat.
 
 ## What It Does
 
-- **AI Villagers**: Spawn villagers powered by Claude that can browse the web, answer questions, and execute tasks via an in-game chat GUI
-- **Schematic Catalog**: Browse, search, and download schematics from minecraft-schematics.com directly in-game
-- **Auto-Build**: Place downloaded schematics in your world using Litematica integration
-- **Web Frontend**: Minecraft-styled website for browsing your schematic collection (Convex-backed)
+- **Claude Code in Minecraft**: Spawn villagers powered by Claude Code that can write code, run commands, and answer questions via an in-game chat GUI
+- **Web Browsing**: Villagers use Browser Use to search the web, find schematics, and download them directly into your world
+- **Schematic Catalog**: Browse, search, and place schematics from a Convex-backed database
+- **Auto-Build**: Place downloaded schematics using Litematica integration
+- **Web Frontend**: Minecraft-styled website for browsing your schematic collection
 
 ## Architecture
 

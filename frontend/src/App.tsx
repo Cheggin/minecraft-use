@@ -5,17 +5,17 @@ import { api } from "../convex/_generated/api";
 type Page = "menu" | "schematics" | "catalog" | "settings" | "about";
 
 const SPLASH_TEXTS = [
-  "AI in Minecraft!",
-  "Spawn a villager!",
-  "Browser Use!",
-  "Powered by Claude!",
-  "Powered by Convex!",
+  "Claude Code in MC!",
   "/spawn lfg",
-  "Ask it anything!",
+  "Talk to your villager!",
+  "It writes code!",
   "It browses the web!",
+  "Powered by Convex!",
+  "Ask it anything!",
   "Build anything!",
   "Open source!",
-  "Also try Litematica!",
+  "Vibe code IRL!",
+  "Coding in Minecraft!",
 ];
 
 function getRandomSplash() {
@@ -152,7 +152,7 @@ function SchematicsPage() {
   return (
     <div className="flex flex-col items-center gap-6">
       <p className="mc-page-text text-center">
-        Schematics uploaded by your AI villagers appear here.
+        Schematics found and downloaded by Claude appear here.
       </p>
       <div className="grid grid-cols-1 gap-3 w-full max-w-[620px]">
         {schematics === undefined ? (
@@ -285,15 +285,15 @@ function AboutPage() {
   return (
     <div className="flex flex-col items-center gap-4 max-w-[620px] mx-auto">
       <p className="mc-page-text text-center">
-        Spawn AI villagers in Minecraft that browse the web,
-        search for schematics, and build them in your world.
-        Powered by Claude and Browser Use.
+        Use Claude Code inside Minecraft. Spawn villagers that
+        can code, browse the web, find schematics, and build
+        them in your world — all from in-game chat.
       </p>
       <div className="grid grid-cols-2 gap-2 w-full mt-2">
         <button className="mc-btn">Version: 0.1.0</button>
         <button className="mc-btn">Mod: Fabric 1.21.1</button>
-        <button className="mc-btn">AI: Claude</button>
-        <button className="mc-btn">Agent: Browser Use</button>
+        <button className="mc-btn">AI: Claude Code</button>
+        <button className="mc-btn">Web: Browser Use</button>
         <button className="mc-btn">Backend: Convex</button>
         <button className="mc-btn">Schematics: {schematicCount}</button>
       </div>
@@ -330,7 +330,7 @@ function TitleLogo() {
           textShadow: "1px 1px 0px #3f3f3f",
         }}
       >
-        AI villagers that browse the web for you
+        Claude Code, inside Minecraft
       </p>
     </div>
   );
