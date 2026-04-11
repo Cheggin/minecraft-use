@@ -1,0 +1,175 @@
+version: '3'
+
+vars:
+  JAVA_HOME: /opt/homebrew/opt/openjdk@21
+  JAVA_BIN: /opt/homebrew/opt/openjdk@21/bin
+  TMUX_BRIDGE: "{{.HOME}}/.smux/bin/tmux-bridge"
+  SESSION: minecraft-use
+  MOD_DIR: "{{.ROOT_DIR}}/fabric-mod"
+  SIDECAR_DIR: "{{.ROOT_DIR}}/sidecar"
+  MODS_DIR: "{{.HOME}}/Library/Application Support/minecraft/mods"
+  GRADLE: "PATH={{.JAVA_BIN}}:$PATH ./gradlew"
+
+tasks:
+
+  # ─── Build ───────────────────────────────────────────
+
+  build:
+    desc: Build the Fabric mod
+    dir: "{{.MOD_DIR}}"
+    cmds:
+      - "{{.GRADLE}} build"
+
+  test:
+    desc: Run all tests (Java + Python)
+    cmds:
+      - task: test:java
+      - task: test:python
+
+  test:java:
+    desc: Run Java unit tests
+    dir: "{{.MOD_DIR}}"
+    cmds:
+      - "{{.GRADLE}} test"
+
+  test:python:
+    desc: Run Python test suite
+    dir: "{{.SIDECAR_DIR}}"
+    cmds:
+      - source venv/bin/activate && pytest --tb=short -q
+
+  lint:
+    desc: Run Python linter (ruff)
+    dir: "{{.SIDECAR_DIR}}"
+    cmds:
+      - source venv/bin/activate && ruff check .
+
+  # ─── tmux Environment ───────────────────────────────
+
+  up:
+    desc: Build mod, install JAR, and start the full tmux dev environment
+    cmds:
+      - task: mc:install
+      - task: down
+      - |
+        tmux new-session -d -s {{.SESSION}} -n dev -x 220 -y 50
+
+        tmux split-window -h -t {{.SESSION}}:dev
+        tmux split-window -v -t {{.SESSION}}:dev.0
+        tmux split-window -v -t {{.SESSION}}:dev.2
+
+        tmux select-layout -t {{.SESSION}}:dev tiled
+
+        # Sidecar (top-left)
+        tmux send-keys -t {{.SESSION}}:dev.0 \
+          "cd '{{.SIDECAR_DIR}}' && source venv/bin/activate && uvicorn server:app --host 127.0.0.1 --port 8765 --reload" Enter
+
+        # Claude (top-right) — start Claude Code automatically
+        tmux send-keys -t {{.SESSION}}:dev.1 \
+          "lfg" Enter
+
+        # Shell (bottom-left) with Java on PATH
+        tmux send-keys -t {{.SESSION}}:dev.2 \
+          "export PATH={{.JAVA_BIN}}:\$PATH && cd '{{.ROOT_DIR}}' && echo '=== Shell pane ready ==='" Enter
+
+        # Browser (bottom-right)
+        tmux send-keys -t {{.SESSION}}:dev.3 \
+          "cd '{{.SIDECAR_DIR}}' && source venv/bin/activate && echo '=== Browser pane === Type: python browser_repl.py'" Enter
+
+        # Name panes with tmux-bridge
+        PANE0=$(tmux display-message -t {{.SESSION}}:dev.0 -p '#{pane_id}')
+        PANE1=$(tmux display-message -t {{.SESSION}}:dev.1 -p '#{pane_id}')
+        PANE2=$(tmux display-message -t {{.SESSION}}:dev.2 -p '#{pane_id}')
+        PANE3=$(tmux display-message -t {{.SESSION}}:dev.3 -p '#{pane_id}')
+
+        {{.TMUX_BRIDGE}} name $PANE0 sidecar
+        {{.TMUX_BRIDGE}} name $PANE1 claude
+        {{.TMUX_BRIDGE}} name $PANE2 shell
+        {{.TMUX_BRIDGE}} name $PANE3 browser
+
+        tmux select-pane -t {{.SESSION}}:dev.0 -T sidecar
+        tmux select-pane -t {{.SESSION}}:dev.1 -T claude
+        tmux select-pane -t {{.SESSION}}:dev.2 -T shell
+        tmux select-pane -t {{.SESSION}}:dev.3 -T browser
+
+        tmux select-pane -t {{.SESSION}}:dev.2
+      - |
+        echo ""
+        echo "tmux session '{{.SESSION}}' ready!"
+        echo ""
+        echo "  Attach:  task attach"
+        echo ""
+        echo "  Layout:"
+        echo "    [sidecar]  top-left     — FastAPI on :8765"
+        echo "    [claude]   top-right    — type 'claude' to start"
+        echo "    [shell]    bottom-left  — general shell (Java on PATH)"
+        echo "    [browser]  bottom-right — type 'python browser_repl.py'"
+        echo ""
+        echo "  Run Minecraft separately, then use /claude, /browser-use, /shell in-game"
+
+  attach:
+    desc: Attach to the tmux dev session
+    cmds:
+      - tmux attach -t {{.SESSION}}
+
+  down:
+    desc: Kill the tmux dev session
+    cmds:
+      - tmux kill-session -t {{.SESSION}} 2>/dev/null || true
+
+  # ─── Minecraft ──────────────────────────────────────
+
+  mc:
+    desc: Build and run Minecraft with the mod
+    dir: "{{.MOD_DIR}}"
+    cmds:
+      - "{{.GRADLE}} runClient"
+
+  mc:install:
+    desc: Copy mod JAR to Minecraft mods folder
+    dir: "{{.MOD_DIR}}"
+    cmds:
+      - "{{.GRADLE}} build"
+      - cp build/libs/fabric-mod-1.0.0.jar "{{.MODS_DIR}}/"
+      - echo "Mod JAR copied to {{.MODS_DIR}}"
+
+  # ─── Sidecar ────────────────────────────────────────
+
+  sidecar:
+    desc: Run the Python sidecar server
+    dir: "{{.SIDECAR_DIR}}"
+    cmds:
+      - source venv/bin/activate && uvicorn server:app --host 127.0.0.1 --port 8765 --reload
+
+  sidecar:repl:
+    desc: Run the Browser Use REPL
+    dir: "{{.SIDECAR_DIR}}"
+    cmds:
+      - source venv/bin/activate && python browser_repl.py
+
+  sidecar:scrape:
+    desc: Run the bulk schematic scraper
+    dir: "{{.SIDECAR_DIR}}"
+    cmds:
+      - source venv/bin/activate && python -c "import asyncio; from bulk_scraper import BulkScraper; asyncio.run(BulkScraper().crawl_all())"
+
+  sidecar:index:
+    desc: Build the schematic catalog index
+    dir: "{{.SIDECAR_DIR}}"
+    cmds:
+      - source venv/bin/activate && python -c "from index_builder import build_index; build_index()"
+
+  # ─── Dev Workflow ───────────────────────────────────
+
+  dev:
+    desc: Build mod, start tmux env, and attach
+    cmds:
+      - task: build
+      - task: up
+      - task: attach
+
+  clean:
+    desc: Clean build artifacts
+    dir: "{{.MOD_DIR}}"
+    cmds:
+      - "{{.GRADLE}} clean"
