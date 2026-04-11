@@ -5,17 +5,17 @@ import { api } from "../convex/_generated/api";
 type Page = "menu" | "schematics" | "catalog" | "settings" | "about";
 
 const SPLASH_TEXTS = [
-  "Build anything!",
-  "Now with schematics!",
-  "Also try Litematica!",
-  "Block by block!",
+  "AI in Minecraft!",
+  "Spawn a villager!",
+  "Browser Use!",
+  "Powered by Claude!",
   "Powered by Convex!",
-  "100% automated!",
-  "NBT parsing!",
-  "Ghost overlay mode!",
-  "Craft your world!",
-  "/build medieval-castle",
+  "/spawn lfg",
+  "Ask it anything!",
+  "It browses the web!",
+  "Build anything!",
   "Open source!",
+  "Also try Litematica!",
 ];
 
 function getRandomSplash() {
@@ -45,8 +45,8 @@ export default function App() {
 }
 
 const PAGE_TITLES: Record<Exclude<Page, "menu">, string> = {
-  schematics: "My Schematics",
-  catalog: "Browse Catalog",
+  schematics: "Schematics",
+  catalog: "Schematic Catalog",
   settings: "Settings",
   about: "About",
 };
@@ -152,7 +152,7 @@ function SchematicsPage() {
   return (
     <div className="flex flex-col items-center gap-6">
       <p className="mc-page-text text-center">
-        Your saved schematics will appear here.
+        Schematics uploaded by your AI villagers appear here.
       </p>
       <div className="grid grid-cols-1 gap-3 w-full max-w-[620px]">
         {schematics === undefined ? (
@@ -285,14 +285,15 @@ function AboutPage() {
   return (
     <div className="flex flex-col items-center gap-4 max-w-[620px] mx-auto">
       <p className="mc-page-text text-center">
-        An in-game schematic catalog with thousands of builds,
-        searchable and placeable without ever leaving Minecraft.
+        Spawn AI villagers in Minecraft that browse the web,
+        search for schematics, and build them in your world.
+        Powered by Claude and Browser Use.
       </p>
       <div className="grid grid-cols-2 gap-2 w-full mt-2">
         <button className="mc-btn">Version: 0.1.0</button>
         <button className="mc-btn">Mod: Fabric 1.21.1</button>
-        <button className="mc-btn">Java: 21</button>
-        <button className="mc-btn">Sidecar: FastAPI</button>
+        <button className="mc-btn">AI: Claude</button>
+        <button className="mc-btn">Agent: Browser Use</button>
         <button className="mc-btn">Backend: Convex</button>
         <button className="mc-btn">Schematics: {schematicCount}</button>
       </div>
@@ -329,7 +330,7 @@ function TitleLogo() {
           textShadow: "1px 1px 0px #3f3f3f",
         }}
       >
-        Save, browse & build schematics in-game
+        AI villagers that browse the web for you
       </p>
     </div>
   );
