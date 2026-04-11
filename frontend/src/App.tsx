@@ -72,11 +72,11 @@ function MainMenu({ onNavigate }: { onNavigate: (page: Page) => void }) {
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col items-center gap-2 w-full max-w-[420px] px-6">
+        <div className="flex flex-col items-center gap-3 w-full max-w-[620px] px-6">
           <McButton label="My Schematics" wide onClick={() => onNavigate("schematics")} />
           <McButton label="Browse Catalog" wide onClick={() => onNavigate("catalog")} />
 
-          <div className="flex gap-2 w-full mt-2">
+          <div className="flex gap-3 w-full mt-2">
             <McButton label="Settings..." half onClick={() => onNavigate("settings")} />
             <McButton label="About" half onClick={() => onNavigate("about")} />
           </div>
@@ -134,7 +134,7 @@ function PageShell({
 
         {/* Done button */}
         <div className="px-6 py-5 flex justify-center">
-          <McButton label="Done" onClick={onBack} style={{ minWidth: "280px" }} />
+          <McButton label="Done" onClick={onBack} style={{ minWidth: "400px" }} />
         </div>
       </div>
     </div>
@@ -149,7 +149,7 @@ function SchematicsPage() {
       <p className="mc-page-text text-center">
         Your saved schematics will appear here.
       </p>
-      <div className="grid grid-cols-1 gap-3 w-full max-w-[500px]">
+      <div className="grid grid-cols-1 gap-3 w-full max-w-[620px]">
         <SchematicCard
           name="Medieval Watchtower"
           category="Castle"
@@ -179,7 +179,7 @@ function SchematicsPage() {
 function CatalogPage() {
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="w-full max-w-[500px]">
+      <div className="w-full max-w-[620px]">
         <input
           type="text"
           placeholder="Search schematics..."
@@ -195,7 +195,7 @@ function CatalogPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 w-full max-w-[500px]">
+      <div className="grid grid-cols-1 gap-3 w-full max-w-[620px]">
         <SchematicCard name="Medieval Watchtower" category="Castle" dims="15x32x15" blocks={3200} />
         <SchematicCard name="Stone Keep" category="Castle" dims="20x18x20" blocks={6100} />
         <SchematicCard name="Modern Villa" category="House" dims="30x12x25" blocks={8100} />
@@ -209,7 +209,7 @@ function CatalogPage() {
 
 function SettingsPage() {
   return (
-    <div className="flex flex-col gap-3 max-w-[520px] mx-auto">
+    <div className="flex flex-col gap-3 max-w-[620px] mx-auto">
       {/* Top row - full width settings */}
       <div className="flex gap-2">
         <button className="mc-btn flex-1">Blocks/tick: 1000</button>
@@ -231,7 +231,7 @@ function SettingsPage() {
 
 function AboutPage() {
   return (
-    <div className="flex flex-col items-center gap-4 max-w-[520px] mx-auto">
+    <div className="flex flex-col items-center gap-4 max-w-[620px] mx-auto">
       <p className="mc-page-text text-center">
         An in-game schematic catalog with thousands of builds,
         searchable and placeable without ever leaving Minecraft.

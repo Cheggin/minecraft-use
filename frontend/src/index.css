@@ -27,23 +27,23 @@ body {
 /* Authentic Minecraft button: flat stone with pixel beveled border */
 .mc-btn {
   font-family: var(--font-minecraft);
-  font-size: 14px;
+  font-size: 18px;
   color: #e0e0e0;
   text-shadow: 2px 2px 0px #383838;
   background-color: #8b8b8b;
   background-image:
     repeating-conic-gradient(#7a7a7a 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
     repeating-conic-gradient(#959595 0% 25%, transparent 0% 50%) 2px 2px / 4px 4px;
-  border: 2px solid #000000;
+  border: 3px solid #000000;
   outline: none;
-  padding: 6px 12px;
-  min-height: 40px;
+  padding: 10px 20px;
+  min-height: 48px;
   cursor: pointer;
   position: relative;
   text-align: center;
   box-shadow:
-    inset 2px 2px 0px #aaaaaa,
-    inset -2px -2px 0px #555555;
+    inset 3px 3px 0px #aaaaaa,
+    inset -3px -3px 0px #555555;
 }
 
 .mc-btn:hover {
@@ -52,14 +52,14 @@ body {
   text-shadow: 2px 2px 0px #383838;
   border-color: #ffffff;
   box-shadow:
-    inset 2px 2px 0px #c0c0c0,
-    inset -2px -2px 0px #606060;
+    inset 3px 3px 0px #c0c0c0,
+    inset -3px -3px 0px #606060;
 }
 
 .mc-btn:active {
   box-shadow:
-    inset 2px 2px 0px #555555,
-    inset -2px -2px 0px #aaaaaa;
+    inset 3px 3px 0px #555555,
+    inset -3px -3px 0px #aaaaaa;
 }
 
 .mc-btn:focus-visible {
