@@ -76,21 +76,32 @@ tasks:
         tmux send-keys -t {{.SESSION}}:dev.3 \
           "cd '{{.SIDECAR_DIR}}' && source venv/bin/activate && python browser_repl.py" Enter
 
-        # Name panes with tmux-bridge
+        # Add a 5th pane for shell (split bottom-left minecraft pane)
+        tmux split-window -v -t {{.SESSION}}:dev.2
+        tmux send-keys -t {{.SESSION}}:dev.3 \
+          "export PATH={{.JAVA_BIN}}:\$PATH && cd '{{.ROOT_DIR}}' && echo '=== Shell pane ready ==='" Enter
+
+        # Re-apply tiled layout for even distribution
+        tmux select-layout -t {{.SESSION}}:dev tiled
+
+        # Name panes with tmux-bridge (indices shift after adding 5th pane)
         PANE0=$(tmux display-message -t {{.SESSION}}:dev.0 -p '#{pane_id}')
         PANE1=$(tmux display-message -t {{.SESSION}}:dev.1 -p '#{pane_id}')
         PANE2=$(tmux display-message -t {{.SESSION}}:dev.2 -p '#{pane_id}')
         PANE3=$(tmux display-message -t {{.SESSION}}:dev.3 -p '#{pane_id}')
+        PANE4=$(tmux display-message -t {{.SESSION}}:dev.4 -p '#{pane_id}')
 
         {{.TMUX_BRIDGE}} name $PANE0 sidecar
         {{.TMUX_BRIDGE}} name $PANE1 claude
         {{.TMUX_BRIDGE}} name $PANE2 minecraft
-        {{.TMUX_BRIDGE}} name $PANE3 browser
+        {{.TMUX_BRIDGE}} name $PANE3 shell
+        {{.TMUX_BRIDGE}} name $PANE4 browser
 
         tmux select-pane -t {{.SESSION}}:dev.0 -T sidecar
         tmux select-pane -t {{.SESSION}}:dev.1 -T claude
         tmux select-pane -t {{.SESSION}}:dev.2 -T minecraft
-        tmux select-pane -t {{.SESSION}}:dev.3 -T browser
+        tmux select-pane -t {{.SESSION}}:dev.3 -T shell
+        tmux select-pane -t {{.SESSION}}:dev.4 -T browser
 
         tmux select-pane -t {{.SESSION}}:dev.2
       - |
