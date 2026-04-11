@@ -41,8 +41,11 @@ body {
   text-shadow: 2px 2px 0px #383838;
   background-color: #8b8b8b;
   background-image:
-    repeating-conic-gradient(#7a7a7a 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
-    repeating-conic-gradient(#959595 0% 25%, transparent 0% 50%) 2px 2px / 4px 4px;
+    repeating-conic-gradient(#767676 0% 25%, transparent 0% 50%) 0 0 / 8px 8px,
+    repeating-conic-gradient(#999999 0% 25%, transparent 0% 50%) 4px 4px / 8px 8px,
+    repeating-conic-gradient(#6e6e6e 0% 25%, transparent 0% 50%) 2px 6px / 6px 6px,
+    repeating-conic-gradient(#a0a0a0 0% 25%, transparent 0% 50%) 5px 1px / 4px 4px,
+    linear-gradient(135deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.04) 75%, transparent 75%) 0 0 / 16px 16px;
   border: 3px solid #000000;
   outline: none;
   padding: 10px 20px;
@@ -145,8 +148,11 @@ body {
   font-family: var(--font-minecraft);
   background-color: #8b8b8b;
   background-image:
-    repeating-conic-gradient(#7a7a7a 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
-    repeating-conic-gradient(#959595 0% 25%, transparent 0% 50%) 2px 2px / 4px 4px;
+    repeating-conic-gradient(#767676 0% 25%, transparent 0% 50%) 0 0 / 8px 8px,
+    repeating-conic-gradient(#999999 0% 25%, transparent 0% 50%) 4px 4px / 8px 8px,
+    repeating-conic-gradient(#6e6e6e 0% 25%, transparent 0% 50%) 2px 6px / 6px 6px,
+    repeating-conic-gradient(#a0a0a0 0% 25%, transparent 0% 50%) 5px 1px / 4px 4px,
+    linear-gradient(135deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.04) 75%, transparent 75%) 0 0 / 16px 16px;
   border: 2px solid #000000;
   box-shadow:
     inset 2px 2px 0px #aaaaaa,
@@ -218,8 +224,11 @@ body {
   text-shadow: 1px 1px 0px #383838;
   background-color: #8b8b8b;
   background-image:
-    repeating-conic-gradient(#7a7a7a 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
-    repeating-conic-gradient(#959595 0% 25%, transparent 0% 50%) 2px 2px / 4px 4px;
+    repeating-conic-gradient(#767676 0% 25%, transparent 0% 50%) 0 0 / 8px 8px,
+    repeating-conic-gradient(#999999 0% 25%, transparent 0% 50%) 4px 4px / 8px 8px,
+    repeating-conic-gradient(#6e6e6e 0% 25%, transparent 0% 50%) 2px 6px / 6px 6px,
+    repeating-conic-gradient(#a0a0a0 0% 25%, transparent 0% 50%) 5px 1px / 4px 4px,
+    linear-gradient(135deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.04) 75%, transparent 75%) 0 0 / 16px 16px;
   border: 2px solid #000000;
   box-shadow:
     inset 1px 1px 0px #aaaaaa,
