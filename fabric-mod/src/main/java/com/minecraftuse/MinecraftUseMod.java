@@ -3,14 +3,18 @@ package com.minecraftuse;
 import com.minecraftuse.commands.BrowserUseCommand;
 import com.minecraftuse.commands.BuildCommand;
 import com.minecraftuse.commands.ClaudeCommand;
+import com.minecraftuse.commands.DespawnCommand;
 import com.minecraftuse.commands.DownloadCommand;
 import com.minecraftuse.commands.ListCommand;
 import com.minecraftuse.commands.ShellCommand;
+import com.minecraftuse.commands.SpawnCommand;
 import com.minecraftuse.commands.TmuxReadCommand;
 import com.minecraftuse.commands.TmuxSendCommand;
 import com.minecraftuse.commands.UndoCommand;
 import com.minecraftuse.gui.CatalogScreen;
 import com.minecraftuse.network.SidecarClient;
+import com.minecraftuse.villager.VillagerInteractionHandler;
+import com.minecraftuse.villager.VillagerRegistry;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -37,13 +41,17 @@ public class MinecraftUseMod implements ClientModInitializer {
             BrowserUseCommand.register(dispatcher);
             BuildCommand.register(dispatcher);
             ClaudeCommand.register(dispatcher);
+            DespawnCommand.register(dispatcher);
             DownloadCommand.register(dispatcher);
             ListCommand.register(dispatcher);
             ShellCommand.register(dispatcher);
+            SpawnCommand.register(dispatcher);
             TmuxSendCommand.register(dispatcher);
             TmuxReadCommand.register(dispatcher);
             UndoCommand.register(dispatcher);
         });
+
+        VillagerInteractionHandler.init();
 
         // Register K keybind to open the catalog screen
         openCatalogKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
@@ -59,6 +67,7 @@ public class MinecraftUseMod implements ClientModInitializer {
                     client.setScreen(new CatalogScreen());
                 }
             }
+            VillagerRegistry.getInstance().tickAll();
         });
 
         LOGGER.info("Minecraft Use mod initialized — commands and keybinds registered");
