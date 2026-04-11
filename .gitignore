@@ -1,0 +1,30 @@
+# Java / Gradle
+fabric-mod/build/
+fabric-mod/.gradle/
+fabric-mod/.fabric/
+*.jar
+!fabric-mod/gradle/wrapper/gradle-wrapper.jar
+
+# Python
+sidecar/venv/
+sidecar/__pycache__/
+sidecar/*.pyc
+
+# Schematic cache (user-specific)
+sidecar/schema_cache/*.schem
+sidecar/schema_cache/*.schematic
+sidecar/schema_cache/*.litematic
+sidecar/schema_cache/*.nbt
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Environment
+.env
+
+# Tool configs
+.omc/
+.ui-loop/

@@ -1,0 +1,22 @@
+{
+    "schemaVersion": 1,
+    "id": "minecraft-use",
+    "version": "${version}",
+    "name": "Minecraft Use",
+    "description": "Search, download, and build schematics using AI-powered browser automation",
+    "authors": ["Reagan"],
+    "contact": {},
+    "license": "MIT",
+    "icon": "assets/minecraft-use/icon.png",
+    "environment": "client",
+    "entrypoints": {
+        "client": ["com.minecraftuse.MinecraftUseMod"]
+    },
+    "mixins": [],
+    "depends": {
+        "fabricloader": ">=0.16.0",
+        "minecraft": "~1.21.1",
+        "java": ">=21",
+        "fabric-api": "*"
+    }
+}
