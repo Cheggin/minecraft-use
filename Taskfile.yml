@@ -68,9 +68,9 @@ tasks:
         tmux send-keys -t {{.SESSION}}:dev.1 \
           "lfg" Enter
 
-        # Shell (bottom-left) with Java on PATH
+        # Minecraft (bottom-left) — build and run
         tmux send-keys -t {{.SESSION}}:dev.2 \
-          "export PATH={{.JAVA_BIN}}:\$PATH && cd '{{.ROOT_DIR}}' && echo '=== Shell pane ready ==='" Enter
+          "export PATH={{.JAVA_BIN}}:\$PATH && cd '{{.MOD_DIR}}' && ./gradlew runClient" Enter
 
         # Browser (bottom-right)
         tmux send-keys -t {{.SESSION}}:dev.3 \
@@ -84,12 +84,12 @@ tasks:
 
         {{.TMUX_BRIDGE}} name $PANE0 sidecar
         {{.TMUX_BRIDGE}} name $PANE1 claude
-        {{.TMUX_BRIDGE}} name $PANE2 shell
+        {{.TMUX_BRIDGE}} name $PANE2 minecraft
         {{.TMUX_BRIDGE}} name $PANE3 browser
 
         tmux select-pane -t {{.SESSION}}:dev.0 -T sidecar
         tmux select-pane -t {{.SESSION}}:dev.1 -T claude
-        tmux select-pane -t {{.SESSION}}:dev.2 -T shell
+        tmux select-pane -t {{.SESSION}}:dev.2 -T minecraft
         tmux select-pane -t {{.SESSION}}:dev.3 -T browser
 
         tmux select-pane -t {{.SESSION}}:dev.2
@@ -102,7 +102,7 @@ tasks:
         echo "  Layout:"
         echo "    [sidecar]  top-left     — FastAPI on :8765"
         echo "    [claude]   top-right    — type 'claude' to start"
-        echo "    [shell]    bottom-left  — general shell (Java on PATH)"
+        echo "    [minecraft] bottom-left  — Minecraft (./gradlew runClient)"
         echo "    [browser]  bottom-right — type 'python browser_repl.py'"
         echo ""
         echo "  Run Minecraft separately, then use /claude, /browser-use, /shell in-game"
