@@ -8,12 +8,13 @@ import net.minecraft.client.MinecraftClient;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class OutputPoller {
 
-    private static final long POLL_INTERVAL_MS = 2000;
+    private static final long POLL_INTERVAL_MS = 200;
 
     private final TmuxBridge bridge;
     private final String paneName;
@@ -42,12 +43,61 @@ public class OutputPoller {
                     if (!stripped.equals(lastRaw)) {
                         lastRaw = stripped;
 
-                        List<String> lines = Arrays.asList(stripped.split("\n"));
+                        List<String> allLines = Arrays.asList(stripped.split("\n"));
+                        // Filter out empty lines, separator lines, and Claude Code chrome
+                        List<String> lines = allLines.stream()
+                            .map(String::trim)
+                            .filter(line -> !line.isEmpty())
+                            .filter(line -> !line.matches("^[─━\\-─\\u2500-\\u257F]{3,}$"))
+                            .filter(line -> !line.startsWith("[OMC#"))
+                            .filter(line -> !line.contains("bypass permissions"))
+                            .filter(line -> !line.contains("shift+tab to cycle"))
+                            .filter(line -> !line.contains("Claude Code v"))
+                            .filter(line -> !line.contains("Claude Max"))
+                            .filter(line -> !line.contains("/remote-control"))
+                            .filter(line -> !line.contains("session:"))
+                            .filter(line -> !line.contains("context)"))
+                            .filter(line -> !line.startsWith("~/"))
+                            .filter(line -> !line.contains("claude.ai/code/"))
+                            .filter(line -> !line.contains("Code in CLI"))
+                            .filter(line -> !line.contains("active ·"))
+                            .filter(line -> !line.contains("MCP server"))
+                            .filter(line -> !line.contains("mcp server"))
+                            .filter(line -> !line.contains("/mcp"))
+                            .filter(line -> !line.equals(">"))
+                            .filter(line -> !line.equals("❯"))
+                            .filter(line -> !line.equals(")"))
+                            .filter(line -> line.chars().filter(c -> c > 0x2500).count() < line.length() / 2)
+                            .collect(java.util.stream.Collectors.toList());
                         lastLines.set(lines);
 
+                        // For floating text above head: only show the last agent response
+                        // Find the last line starting with ● or ⏺ (agent response marker)
+                        // Then collect that line and all continuation lines after it
+                        List<String> agentLines = new java.util.ArrayList<>();
+                        int lastAgentStart = -1;
+                        for (int i = lines.size() - 1; i >= 0; i--) {
+                            String l = lines.get(i);
+                            if (l.startsWith("●") || l.startsWith("⏺")) {
+                                lastAgentStart = i;
+                                break;
+                            }
+                            // Stop searching if we hit a user prompt
+                            if (l.startsWith("❯") || l.startsWith("> ")) break;
+                        }
+                        if (lastAgentStart >= 0) {
+                            for (int i = lastAgentStart; i < lines.size(); i++) {
+                                String l = lines.get(i);
+                                // Stop if we hit another user prompt
+                                if (i > lastAgentStart && (l.startsWith("❯") || l.startsWith("> "))) break;
+                                agentLines.add(l);
+                            }
+                        }
+
+                        final List<String> floatingLines = agentLines;
                         MinecraftClient client = MinecraftClient.getInstance();
                         if (client != null) {
-                            client.execute(() -> floatingText.update(lines));
+                            client.execute(() -> floatingText.update(floatingLines));
                         }
                     }
 
