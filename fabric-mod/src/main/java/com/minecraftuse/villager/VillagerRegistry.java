@@ -1,7 +1,7 @@
 package com.minecraftuse.villager;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.passive.VillagerEntity;
+import net.minecraft.entity.mob.MobEntity;
 import com.minecraftuse.ModSounds;
 import net.minecraft.text.Text;
 
@@ -15,7 +15,7 @@ import java.util.Map;
 public class VillagerRegistry {
 
     public record AgentVillagerData(
-        VillagerEntity villager,
+        MobEntity villager,
         String paneName,
         FloatingText floatingText,
         OutputPoller outputPoller
@@ -50,7 +50,7 @@ public class VillagerRegistry {
         return byName.get(name);
     }
 
-    public AgentVillagerData getByEntity(VillagerEntity entity) {
+    public AgentVillagerData getByEntity(MobEntity entity) {
         for (AgentVillagerData data : byName.values()) {
             if (data.villager().equals(entity)) {
                 return data;
@@ -59,7 +59,7 @@ public class VillagerRegistry {
         return null;
     }
 
-    public String getNameByEntity(VillagerEntity entity) {
+    public String getNameByEntity(MobEntity entity) {
         for (Map.Entry<String, AgentVillagerData> entry : byName.entrySet()) {
             if (entry.getValue().villager().equals(entity)) {
                 return entry.getKey();

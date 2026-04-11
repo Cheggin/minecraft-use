@@ -32,22 +32,28 @@ public class SpawnCommand {
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
         dispatcher.register(
-            ClientCommandManager.literal("spawn")
+            ClientCommandManager.literal("agent")
                 .then(ClientCommandManager.argument("name", StringArgumentType.string())
                     .executes(context -> executeSpawn(context.getSource(),
-                        StringArgumentType.getString(context, "name"), null))
-                    .then(ClientCommandManager.argument("command", StringArgumentType.greedyString())
+                        StringArgumentType.getString(context, "name"), "villager", null))
+                    .then(ClientCommandManager.argument("mob_type", StringArgumentType.string())
                         .executes(context -> executeSpawn(context.getSource(),
                             StringArgumentType.getString(context, "name"),
-                            StringArgumentType.getString(context, "command")))))
+                            StringArgumentType.getString(context, "mob_type"), null))
+                        .then(ClientCommandManager.argument("command", StringArgumentType.greedyString())
+                            .executes(context -> executeSpawn(context.getSource(),
+                                StringArgumentType.getString(context, "name"),
+                                StringArgumentType.getString(context, "mob_type"),
+                                StringArgumentType.getString(context, "command"))))))
         );
     }
 
     private static final String DEFAULT_COMMAND = "lfg";
 
-    private static int executeSpawn(FabricClientCommandSource source, String name, String command) {
+    private static int executeSpawn(FabricClientCommandSource source, String name, String mobType, String command) {
         // Default to lfg (Claude Code) if no command specified
         final String finalCommand = (command == null || command.isBlank()) ? DEFAULT_COMMAND : command;
+        final String finalMobType = (mobType == null || mobType.isBlank()) ? "villager" : mobType.toLowerCase();
         VillagerRegistry registry = VillagerRegistry.getInstance();
 
         if (registry.contains(name)) {
@@ -123,7 +129,7 @@ public class SpawnCommand {
                     FloatingText floatingText = new FloatingText(serverWorld);
                     floatingText.spawn(spawnPos.add(0, 2.2, 0));
 
-                    AgentVillager agent = AgentVillager.spawn(serverWorld, spawnPos, name);
+                    AgentVillager agent = AgentVillager.spawn(serverWorld, spawnPos, name, finalMobType);
 
                     OutputPoller poller = new OutputPoller(bridge, name, floatingText);
                     poller.start();

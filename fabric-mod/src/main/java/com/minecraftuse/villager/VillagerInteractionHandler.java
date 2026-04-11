@@ -4,7 +4,7 @@ import com.minecraftuse.gui.VillagerChatScreen;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.passive.VillagerEntity;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -24,10 +24,10 @@ public class VillagerInteractionHandler {
             Entity entity,
             EntityHitResult hitResult) {
 
-        if (world.isClient() && entity instanceof VillagerEntity villager) {
-            VillagerRegistry.AgentVillagerData data = VillagerRegistry.getInstance().getByEntity(villager);
+        if (world.isClient() && entity instanceof MobEntity mob) {
+            VillagerRegistry.AgentVillagerData data = VillagerRegistry.getInstance().getByEntity(mob);
             if (data != null) {
-                String name = VillagerRegistry.getInstance().getNameByEntity(villager);
+                String name = VillagerRegistry.getInstance().getNameByEntity(mob);
                 MinecraftClient client = MinecraftClient.getInstance();
                 client.execute(() -> client.setScreen(new VillagerChatScreen(name, data)));
                 return ActionResult.SUCCESS;

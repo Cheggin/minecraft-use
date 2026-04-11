@@ -1,7 +1,7 @@
 package com.minecraftuse.villager;
 
 import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.passive.VillagerEntity;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 
 import java.util.EnumSet;
@@ -12,11 +12,11 @@ public class FollowPlayerGoal extends Goal {
     private static final double MAX_FOLLOW_DISTANCE = 6.0;
     private static final double TELEPORT_DISTANCE = 16.0;
 
-    private final VillagerEntity villager;
+    private final MobEntity villager;
     private final double followSpeed;
     private PlayerEntity targetPlayer;
 
-    public FollowPlayerGoal(VillagerEntity villager, double followSpeed) {
+    public FollowPlayerGoal(MobEntity villager, double followSpeed) {
         this.villager = villager;
         this.followSpeed = followSpeed;
         this.setControls(EnumSet.of(Control.MOVE));
