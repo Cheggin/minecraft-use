@@ -72,9 +72,9 @@ tasks:
         tmux send-keys -t {{.SESSION}}:dev.2 \
           "export PATH={{.JAVA_BIN}}:\$PATH && cd '{{.MOD_DIR}}' && ./gradlew runClient" Enter
 
-        # Browser (bottom-right)
+        # Browser (bottom-right) — start Browser Use REPL
         tmux send-keys -t {{.SESSION}}:dev.3 \
-          "cd '{{.SIDECAR_DIR}}' && source venv/bin/activate && echo '=== Browser pane === Type: python browser_repl.py'" Enter
+          "cd '{{.SIDECAR_DIR}}' && source venv/bin/activate && python browser_repl.py" Enter
 
         # Name panes with tmux-bridge
         PANE0=$(tmux display-message -t {{.SESSION}}:dev.0 -p '#{pane_id}')
@@ -103,7 +103,7 @@ tasks:
         echo "    [sidecar]  top-left     — FastAPI on :8765"
         echo "    [claude]   top-right    — type 'claude' to start"
         echo "    [minecraft] bottom-left  — Minecraft (./gradlew runClient)"
-        echo "    [browser]  bottom-right — type 'python browser_repl.py'"
+        echo "    [browser]  bottom-right — Browser Use REPL"
         echo ""
         echo "  Run Minecraft separately, then use /claude, /browser-use, /shell in-game"
 
