@@ -142,7 +142,7 @@ public class BuildCommand {
                 }
 
                 // Download the .schem file
-                sendFeedback(source, "§e[MCUse] §7Downloading from Convex...");
+                sendActionBar("§e[MCUse] §7Downloading from Convex...");
                 HttpRequest dlRequest = HttpRequest.newBuilder()
                     .uri(URI.create(fileUrl))
                     .GET()
@@ -175,5 +175,14 @@ public class BuildCommand {
         MinecraftClient.getInstance().execute(() ->
             source.sendFeedback(Text.literal(message))
         );
+    }
+
+    private static void sendActionBar(String message) {
+        MinecraftClient.getInstance().execute(() -> {
+            if (MinecraftClient.getInstance().player != null) {
+                MinecraftClient.getInstance().player.sendMessage(
+                    Text.literal(message), true);
+            }
+        });
     }
 }
