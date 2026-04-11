@@ -106,26 +106,35 @@ function PageShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative w-screen h-screen overflow-hidden select-none mc-dirt-panel">
+    <div className="relative w-screen h-screen overflow-hidden select-none">
+      {/* Same background as main menu */}
+      <img
+        src="/minecraft-bg.webp"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ imageRendering: "auto", filter: "blur(3px) brightness(0.55)", transform: "scale(1.05)" }}
+      />
+      <div className="absolute inset-0 bg-black/30" />
+
       <div className="relative z-10 flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b-3 border-black/40">
+        {/* Title */}
+        <div className="flex items-center justify-center px-6 pt-6 pb-4">
           <h2
-            className="mc-subtitle leading-none"
-            style={{ fontSize: "22px", color: "#ffffff" }}
+            className="mc-title leading-none"
+            style={{ fontSize: "24px" }}
           >
             {title}
           </h2>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
           {children}
         </div>
 
-        {/* Bottom bar */}
-        <div className="px-6 py-4 flex justify-center">
-          <McButton label="Done" onClick={onBack} style={{ minWidth: "200px" }} />
+        {/* Done button */}
+        <div className="px-6 py-5 flex justify-center">
+          <McButton label="Done" onClick={onBack} style={{ minWidth: "280px" }} />
         </div>
       </div>
     </div>
@@ -200,36 +209,42 @@ function CatalogPage() {
 
 function SettingsPage() {
   return (
-    <div className="flex flex-col gap-4 max-w-[500px] mx-auto">
-      <SettingRow label="Blocks per tick" value="1000" />
-      <SettingRow label="Ghost preview by default" value="ON" />
-      <SettingRow label="Catalog keybind" value="K" />
-      <SettingRow label="Sidecar port" value="8765" />
+    <div className="flex flex-col gap-3 max-w-[520px] mx-auto">
+      {/* Top row - full width settings */}
+      <div className="flex gap-2">
+        <button className="mc-btn flex-1">Blocks/tick: 1000</button>
+        <button className="mc-btn flex-1">Ghost Preview: ON</button>
+      </div>
+
+      {/* Grid of options */}
+      <div className="grid grid-cols-2 gap-2">
+        <button className="mc-btn">Catalog Keybind: K</button>
+        <button className="mc-btn">Sidecar Port: 8765</button>
+        <button className="mc-btn">Auto-Place: OFF</button>
+        <button className="mc-btn">Show Tooltips: ON</button>
+        <button className="mc-btn">Material Swap...</button>
+        <button className="mc-btn">Ghost Opacity: 40%</button>
+      </div>
     </div>
   );
 }
 
 function AboutPage() {
   return (
-    <div className="flex flex-col items-center gap-4 max-w-[500px] mx-auto">
-      <h3
-        className="mc-title leading-none"
-        style={{ fontSize: "32px" }}
-      >
-        MINECRAFT-USE
-      </h3>
+    <div className="flex flex-col items-center gap-4 max-w-[520px] mx-auto">
       <p className="mc-page-text text-center">
         An in-game schematic catalog with thousands of builds,
         searchable and placeable without ever leaving Minecraft.
       </p>
-      <div className="flex flex-col gap-2 mt-4 w-full">
-        <InfoRow label="Version" value="0.1.0" />
-        <InfoRow label="Mod" value="Fabric 1.21.1" />
-        <InfoRow label="Java" value="21" />
-        <InfoRow label="Sidecar" value="Python + FastAPI" />
-        <InfoRow label="Backend" value="Convex" />
+      <div className="grid grid-cols-2 gap-2 w-full mt-2">
+        <button className="mc-btn">Version: 0.1.0</button>
+        <button className="mc-btn">Mod: Fabric 1.21.1</button>
+        <button className="mc-btn">Java: 21</button>
+        <button className="mc-btn">Sidecar: FastAPI</button>
+        <button className="mc-btn">Backend: Convex</button>
+        <button className="mc-btn">Credits...</button>
       </div>
-      <p className="mc-page-text-dim text-center text-xs mt-4">
+      <p className="mc-page-text-dim text-center text-xs mt-2">
         Not affiliated with Mojang Studios or Microsoft
       </p>
     </div>
@@ -321,20 +336,3 @@ function SchematicCard({
   );
 }
 
-function SettingRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="mc-card flex items-center justify-between">
-      <span className="mc-card-title">{label}</span>
-      <span className="mc-card-meta">{value}</span>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between py-2 border-b border-white/10">
-      <span className="mc-page-text">{label}</span>
-      <span className="mc-page-text-dim">{value}</span>
-    </div>
-  );
-}
