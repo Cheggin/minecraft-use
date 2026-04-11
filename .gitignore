@@ -28,3 +28,5 @@ sidecar/schema_cache/*.nbt
 # Tool configs
 .omc/
 .ui-loop/
+fabric-mod/run/
+.omc/
