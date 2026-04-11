@@ -1,5 +1,6 @@
 package com.minecraftuse.commands;
 
+import com.minecraftuse.bridge.AnsiToMinecraft;
 import com.minecraftuse.bridge.PaneConfig;
 import com.minecraftuse.bridge.TmuxBridge;
 import com.mojang.brigadier.CommandDispatcher;
@@ -66,6 +67,8 @@ public class ClaudeCommand {
     }
 
     private static void displayResponse(FabricClientCommandSource source, String response) {
+        // Convert ANSI colors to Minecraft § formatting
+        response = AnsiToMinecraft.convert(response);
         String[] lines = response.split("\n");
 
         // Filter out Claude Code chrome (same as OutputPoller)

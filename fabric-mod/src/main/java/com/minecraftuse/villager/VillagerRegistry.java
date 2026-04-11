@@ -18,8 +18,14 @@ public class VillagerRegistry {
         MobEntity villager,
         String paneName,
         FloatingText floatingText,
-        OutputPoller outputPoller
-    ) {}
+        OutputPoller outputPoller,
+        Integer monitoredPort
+    ) {
+        /** Constructor for agent villagers (no port monitoring) */
+        public AgentVillagerData(MobEntity villager, String paneName, FloatingText floatingText, OutputPoller outputPoller) {
+            this(villager, paneName, floatingText, outputPoller, null);
+        }
+    }
 
     private static final VillagerRegistry INSTANCE = new VillagerRegistry();
 
@@ -43,6 +49,7 @@ public class VillagerRegistry {
             if (data.villager().isAlive()) {
                 data.villager().discard();
             }
+            killMonitoredPort(data);
         }
     }
 
@@ -81,7 +88,7 @@ public class VillagerRegistry {
         for (Map.Entry<String, AgentVillagerData> entry : byName.entrySet()) {
             AgentVillagerData data = entry.getValue();
             if (data.villager().isAlive()) {
-                data.floatingText().tick(data.villager().getPos().add(0, 0.5, 0));
+                data.floatingText().tick(data.villager().getPos().add(0, 1.2, 0));
             } else {
                 dead.add(entry.getKey());
             }
@@ -107,6 +114,8 @@ public class VillagerRegistry {
                         killPb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
                     }
                 } catch (Exception ignored) {}
+                // Kill monitored port process if this was a listen-villager
+                killMonitoredPort(data);
                 // Play death sound and show message
                 MinecraftClient client = MinecraftClient.getInstance();
                 if (client != null && client.player != null) {
@@ -119,6 +128,31 @@ public class VillagerRegistry {
                 }
             }
         }
+    }
+
+    /** Kill all processes on the monitored port, if this was a listen-villager. */
+    private void killMonitoredPort(AgentVillagerData data) {
+        if (data.monitoredPort() == null) return;
+        Thread killThread = new Thread(() -> {
+            try {
+                // Re-resolve PIDs at kill time to avoid stale PID race conditions
+                ProcessBuilder lsofPb = new ProcessBuilder("lsof", "-ti", ":" + data.monitoredPort());
+                lsofPb.redirectErrorStream(true);
+                Process lsofProc = lsofPb.start();
+                String pidOutput = new String(lsofProc.getInputStream().readAllBytes()).trim();
+                lsofProc.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                if (!pidOutput.isEmpty()) {
+                    for (String pid : pidOutput.split("\\s+")) {
+                        try {
+                            new ProcessBuilder("kill", pid.trim()).start()
+                                .waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            } catch (Exception ignored) {}
+        }, "PortKill-" + data.monitoredPort());
+        killThread.setDaemon(true);
+        killThread.start();
     }
 
     public void clear() {
