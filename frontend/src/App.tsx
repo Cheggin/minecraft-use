@@ -60,19 +60,19 @@ function MainMenu({ onNavigate }: { onNavigate: (page: Page) => void }) {
       />
       <div className="absolute inset-0 bg-black/25" />
 
-      <div className="relative z-10 flex flex-col items-center justify-between h-full py-6">
+      <div className="relative z-10 flex flex-col items-center justify-between h-full py-4">
         {/* Title */}
-        <div className="flex flex-col items-center mt-6 relative">
+        <div className="flex flex-col items-center mt-[8vh] relative">
           <TitleLogo />
-          <div className="absolute -right-20 top-14">
-            <span className="mc-splash text-lg whitespace-nowrap block">
+          <div className="absolute -right-24 top-16">
+            <span className="mc-splash text-xl whitespace-nowrap block">
               {splash}
             </span>
           </div>
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col items-center gap-3 w-full max-w-[620px] px-6">
+        <div className="flex flex-col items-center gap-3 w-[60vw] min-w-[320px] max-w-[700px]">
           <McButton label="My Schematics" wide onClick={() => onNavigate("schematics")} />
           <McButton label="Browse Catalog" wide onClick={() => onNavigate("catalog")} />
 
@@ -258,13 +258,13 @@ function TitleLogo() {
     <div className="flex flex-col items-center">
       <h1
         className="mc-title font-bold leading-none"
-        style={{ fontSize: "clamp(48px, 12vw, 96px)" }}
+        style={{ fontSize: "clamp(56px, 14vw, 120px)" }}
       >
         MINECRAFT
       </h1>
       <span
-        className="mc-subtitle leading-none mt-1"
-        style={{ fontSize: "clamp(20px, 5vw, 40px)" }}
+        className="mc-subtitle leading-none mt-2"
+        style={{ fontSize: "clamp(24px, 6vw, 48px)" }}
       >
         — USE —
       </span>
