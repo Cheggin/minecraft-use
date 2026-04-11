@@ -7,6 +7,7 @@ import com.minecraftuse.commands.ClaudeCommand;
 import com.minecraftuse.commands.DespawnCommand;
 import com.minecraftuse.commands.DownloadCommand;
 import com.minecraftuse.commands.ListCommand;
+import com.minecraftuse.commands.ListenCommand;
 import com.minecraftuse.commands.ShellCommand;
 import com.minecraftuse.commands.SpawnCommand;
 import com.minecraftuse.commands.TmuxReadCommand;
@@ -47,6 +48,7 @@ public class MinecraftUseMod implements ClientModInitializer {
             DespawnCommand.register(dispatcher);
             DownloadCommand.register(dispatcher);
             ListCommand.register(dispatcher);
+            ListenCommand.register(dispatcher);
             ShellCommand.register(dispatcher);
             SpawnCommand.register(dispatcher);
             TmuxSendCommand.register(dispatcher);
