@@ -112,6 +112,16 @@ tasks:
     cmds:
       - tmux attach -t {{.SESSION}}
 
+  attach:dev:
+    desc: Attach to the dev window (sidecar, claude, shell, browser)
+    cmds:
+      - tmux select-window -t {{.SESSION}}:dev && tmux attach -t {{.SESSION}}
+
+  attach:agents:
+    desc: Attach to the agents window (spawned villager panes)
+    cmds:
+      - tmux select-window -t {{.SESSION}}:agents 2>/dev/null && tmux attach -t {{.SESSION}} || echo "No agents window yet — use /spawn in Minecraft first"
+
   down:
     desc: Kill the tmux dev session
     cmds:
