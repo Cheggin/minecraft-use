@@ -31,7 +31,9 @@ body {
   color: #e0e0e0;
   text-shadow: 2px 2px 0px #383838;
   background-color: #8b8b8b;
-  /* Pixel-perfect bevel: bright top/left, dark bottom/right, black outline */
+  background-image:
+    repeating-conic-gradient(#7a7a7a 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
+    repeating-conic-gradient(#959595 0% 25%, transparent 0% 50%) 2px 2px / 4px 4px;
   border: 2px solid #000000;
   outline: none;
   padding: 6px 12px;
@@ -45,12 +47,13 @@ body {
 }
 
 .mc-btn:hover {
-  background-color: #6e6eac;
+  background-color: #9a9a9a;
   color: #ffffa0;
-  text-shadow: 2px 2px 0px #28284a;
+  text-shadow: 2px 2px 0px #383838;
+  border-color: #ffffff;
   box-shadow:
-    inset 2px 2px 0px #9090d0,
-    inset -2px -2px 0px #484878;
+    inset 2px 2px 0px #c0c0c0,
+    inset -2px -2px 0px #606060;
 }
 
 .mc-btn:active {
@@ -128,6 +131,9 @@ body {
 .mc-card {
   font-family: var(--font-minecraft);
   background-color: #8b8b8b;
+  background-image:
+    repeating-conic-gradient(#7a7a7a 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
+    repeating-conic-gradient(#959595 0% 25%, transparent 0% 50%) 2px 2px / 4px 4px;
   border: 2px solid #000000;
   box-shadow:
     inset 2px 2px 0px #aaaaaa,
@@ -137,10 +143,11 @@ body {
 }
 
 .mc-card:hover {
-  background-color: #6e6eac;
+  background-color: #9a9a9a;
+  border-color: #ffffff;
   box-shadow:
-    inset 2px 2px 0px #9090d0,
-    inset -2px -2px 0px #484878;
+    inset 2px 2px 0px #c0c0c0,
+    inset -2px -2px 0px #606060;
 }
 
 .mc-card-title {
@@ -197,6 +204,9 @@ body {
   color: #e0e0e0;
   text-shadow: 1px 1px 0px #383838;
   background-color: #8b8b8b;
+  background-image:
+    repeating-conic-gradient(#7a7a7a 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
+    repeating-conic-gradient(#959595 0% 25%, transparent 0% 50%) 2px 2px / 4px 4px;
   border: 2px solid #000000;
   box-shadow:
     inset 1px 1px 0px #aaaaaa,
@@ -209,11 +219,12 @@ body {
 }
 
 .mc-tag:hover {
-  background-color: #6e6eac;
+  background-color: #9a9a9a;
   color: #ffffa0;
+  border-color: #ffffff;
   box-shadow:
-    inset 1px 1px 0px #9090d0,
-    inset -1px -1px 0px #484878;
+    inset 1px 1px 0px #c0c0c0,
+    inset -1px -1px 0px #606060;
 }
 
 /* ===== PAGE TEXT ===== */
