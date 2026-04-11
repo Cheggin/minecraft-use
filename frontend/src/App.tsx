@@ -72,7 +72,7 @@ function MainMenu({ onNavigate }: { onNavigate: (page: Page) => void }) {
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col items-center gap-3 w-[60vw] min-w-[320px] max-w-[700px]">
+        <div className="flex flex-col items-center gap-3 w-[75vw] min-w-[320px] max-w-[800px]">
           <McButton label="My Schematics" wide onClick={() => onNavigate("schematics")} />
           <McButton label="Browse Catalog" wide onClick={() => onNavigate("catalog")} />
 
