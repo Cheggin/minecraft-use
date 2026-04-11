@@ -8,10 +8,19 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "MinecraftTitle";
+  src: url("/fonts/Monocraft.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-light: #ffffff;
   --color-dark: #171717;
   --font-minecraft: "Minecraft", monospace;
+  --font-minecraft-title: "MinecraftTitle", monospace;
 }
 
 body {
@@ -73,29 +82,33 @@ body {
 
 /* ===== MINECRAFT TITLE ===== */
 .mc-title {
-  font-family: var(--font-minecraft);
+  font-family: var(--font-minecraft-title);
   color: var(--color-light);
+  text-shadow:
+    4px 4px 0px #3f3f3f,
+    3px 4px 0px #3f3f3f,
+    4px 3px 0px #3f3f3f,
+    -2px -2px 0px #3f3f3f,
+    2px -2px 0px #3f3f3f,
+    -2px 2px 0px #3f3f3f,
+    0px 3px 0px #3f3f3f,
+    3px 0px 0px #3f3f3f,
+    0px -2px 0px #3f3f3f,
+    -2px 0px 0px #3f3f3f;
+  letter-spacing: 6px;
+}
+
+.mc-subtitle {
+  font-family: var(--font-minecraft-title);
+  color: #bbbbbb;
   text-shadow:
     3px 3px 0px #3f3f3f,
     -1px -1px 0px #3f3f3f,
     1px -1px 0px #3f3f3f,
     -1px 1px 0px #3f3f3f,
     0px 2px 0px #3f3f3f,
-    2px 0px 0px #3f3f3f,
-    0px -1px 0px #3f3f3f,
-    -1px 0px 0px #3f3f3f;
+    2px 0px 0px #3f3f3f;
   letter-spacing: 4px;
-}
-
-.mc-subtitle {
-  font-family: var(--font-minecraft);
-  color: #aaaaaa;
-  text-shadow:
-    2px 2px 0px #3f3f3f,
-    -1px -1px 0px #3f3f3f,
-    1px -1px 0px #3f3f3f,
-    -1px 1px 0px #3f3f3f;
-  letter-spacing: 3px;
 }
 
 /* ===== SPLASH TEXT ===== */

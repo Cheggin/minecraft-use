@@ -64,8 +64,8 @@ function MainMenu({ onNavigate }: { onNavigate: (page: Page) => void }) {
         {/* Title */}
         <div className="flex flex-col items-center mt-[8vh] relative">
           <TitleLogo />
-          <div className="absolute -right-24 top-16">
-            <span className="mc-splash text-xl whitespace-nowrap block">
+          <div className="absolute -right-28 top-20">
+            <span className="mc-splash text-2xl whitespace-nowrap block">
               {splash}
             </span>
           </div>
@@ -264,15 +264,15 @@ function TitleLogo() {
       </h1>
       <span
         className="mc-subtitle leading-none mt-2"
-        style={{ fontSize: "clamp(24px, 6vw, 48px)" }}
+        style={{ fontSize: "clamp(28px, 7vw, 56px)" }}
       >
         — USE —
       </span>
       <p
-        className="mt-3 text-center"
+        className="mt-4 text-center"
         style={{
           fontFamily: "var(--font-minecraft)",
-          fontSize: "12px",
+          fontSize: "14px",
           color: "#cccccc",
           textShadow: "1px 1px 0px #3f3f3f",
         }}
