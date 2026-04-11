@@ -1,10 +1,14 @@
 package com.minecraftuse.villager;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.passive.VillagerEntity;
+import net.minecraft.text.Text;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class VillagerRegistry {
@@ -72,9 +76,44 @@ public class VillagerRegistry {
     }
 
     public void tickAll() {
-        for (AgentVillagerData data : byName.values()) {
+        List<String> dead = new ArrayList<>();
+        for (Map.Entry<String, AgentVillagerData> entry : byName.entrySet()) {
+            AgentVillagerData data = entry.getValue();
             if (data.villager().isAlive()) {
                 data.floatingText().tick(data.villager().getPos().add(0, 2.2, 0));
+            } else {
+                dead.add(entry.getKey());
+            }
+        }
+        // Clean up dead villagers
+        for (String name : dead) {
+            AgentVillagerData data = byName.remove(name);
+            if (data != null) {
+                data.outputPoller().stop();
+                data.floatingText().remove();
+                // Kill the tmux pane — resolve label to pane ID first via tmux-bridge
+                try {
+                    String tmuxBridge = System.getProperty("user.home") + "/.smux/bin/tmux-bridge";
+                    ProcessBuilder resolvePb = new ProcessBuilder(tmuxBridge, "resolve", data.paneName());
+                    resolvePb.environment().put("PATH", "/opt/homebrew/bin:" + resolvePb.environment().getOrDefault("PATH", "/usr/bin:/bin"));
+                    resolvePb.redirectErrorStream(true);
+                    Process resolveProc = resolvePb.start();
+                    String paneId = new String(resolveProc.getInputStream().readAllBytes()).trim();
+                    resolveProc.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                    if (!paneId.isEmpty()) {
+                        ProcessBuilder killPb = new ProcessBuilder("/opt/homebrew/bin/tmux", "kill-pane", "-t", paneId);
+                        killPb.redirectErrorStream(true);
+                        killPb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                    }
+                } catch (Exception ignored) {}
+                // Show death message
+                MinecraftClient client = MinecraftClient.getInstance();
+                if (client != null && client.player != null) {
+                    client.player.sendMessage(
+                        Text.literal("§e[MCUse] §cDespawned agent: §f" + name + " §7(villager died)"),
+                        false
+                    );
+                }
             }
         }
     }
