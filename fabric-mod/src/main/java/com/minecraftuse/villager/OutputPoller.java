@@ -1,6 +1,6 @@
 package com.minecraftuse.villager;
 
-import com.minecraftuse.bridge.AnsiStripper;
+import com.minecraftuse.bridge.AnsiToMinecraft;
 import com.minecraftuse.bridge.TmuxBridge;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.sound.SoundEvents;
@@ -23,6 +23,7 @@ public class OutputPoller {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicReference<List<String>> lastLines = new AtomicReference<>(Collections.emptyList());
     private volatile List<String> lastDisplayedLines = Collections.emptyList();
+    private volatile boolean soundPlayedForCurrentResponse = false;
     private Thread pollThread;
 
     public OutputPoller(TmuxBridge bridge, String paneName, FloatingText floatingText) {
@@ -38,82 +39,97 @@ public class OutputPoller {
             String lastRaw = null;
             while (running.get()) {
                 try {
-                    String raw = bridge.read(paneName).get();
-                    String stripped = AnsiStripper.strip(raw);
+                    String raw = bridge.readWithColor(paneName).get();
+                    // Debug: log raw bytes
+                    StringBuilder hex = new StringBuilder();
+                    for (int di = 0; di < Math.min(100, raw.length()); di++) {
+                        hex.append(String.format("%02x ", (int) raw.charAt(di)));
+                    }
+                    com.minecraftuse.MinecraftUseMod.LOGGER.info("[OutputPoller] Raw hex (first 100): {}", hex);
+                    long escCount = raw.chars().filter(c -> c == 27).count();
+                    com.minecraftuse.MinecraftUseMod.LOGGER.info("[OutputPoller] ESC count: {}, total length: {}", escCount, raw.length());
+                    String stripped = AnsiToMinecraft.convert(raw);
 
                     if (!stripped.equals(lastRaw)) {
                         lastRaw = stripped;
 
                         List<String> allLines = Arrays.asList(stripped.split("\n"));
-                        // Filter out empty lines, separator lines, and Claude Code chrome
+                        // Filter using plain text (strip § codes) but keep formatted lines
                         List<String> lines = allLines.stream()
                             .map(String::trim)
-                            .filter(line -> !line.isEmpty())
-                            .filter(line -> !line.matches("^[─━\\-─\\u2500-\\u257F]{3,}$"))
-                            .filter(line -> !line.startsWith("[OMC#"))
-                            .filter(line -> !line.contains("bypass permissions"))
-                            .filter(line -> !line.contains("shift+tab to cycle"))
-                            .filter(line -> !line.contains("Claude Code v"))
-                            .filter(line -> !line.contains("Claude Max"))
-                            .filter(line -> !line.contains("/remote-control"))
-                            .filter(line -> !line.contains("session:"))
-                            .filter(line -> !line.contains("context)"))
-                            .filter(line -> !line.startsWith("~/"))
-                            .filter(line -> !line.contains("claude.ai/code/"))
-                            .filter(line -> !line.contains("Code in CLI"))
-                            .filter(line -> !line.contains("active ·"))
-                            .filter(line -> !line.contains("MCP server"))
-                            .filter(line -> !line.contains("mcp server"))
-                            .filter(line -> !line.contains("/mcp"))
-                            .filter(line -> !line.equals(">"))
-                            .filter(line -> !line.equals("❯"))
-                            .filter(line -> !line.equals(")"))
-                            .filter(line -> line.chars().filter(c -> c > 0x2500).count() < line.length() / 2)
+                            .filter(line -> !isChromeLine(line))
                             .collect(java.util.stream.Collectors.toList());
                         lastLines.set(lines);
+                        // Debug: log if any lines contain §
+                        if (!lines.isEmpty()) {
+                            boolean has = lines.stream().anyMatch(l -> l.contains("§"));
+                            if (has) {
+                                com.minecraftuse.MinecraftUseMod.LOGGER.info("[OutputPoller] Lines with §: {}",
+                                    lines.stream().filter(l -> l.contains("§")).count() + "/" + lines.size());
+                            } else {
+                                com.minecraftuse.MinecraftUseMod.LOGGER.info("[OutputPoller] NO § codes in {} lines. Sample: {}",
+                                    lines.size(), lines.get(0).substring(0, Math.min(50, lines.get(0).length())));
+                            }
+                        }
 
                         // For floating text above head: only show the last agent response
-                        // Find the last line starting with ● or ⏺ (agent response marker)
-                        // Then collect that line and all continuation lines after it
+                        // Use plain text (strip §) for detection, keep formatted for display
                         List<String> agentLines = new java.util.ArrayList<>();
                         int lastAgentStart = -1;
                         for (int i = lines.size() - 1; i >= 0; i--) {
-                            String l = lines.get(i);
-                            if (l.startsWith("●") || l.startsWith("⏺")) {
+                            String plain = stripFormatting(lines.get(i));
+                            if (plain.startsWith("●") || plain.startsWith("⏺")) {
                                 lastAgentStart = i;
                                 break;
                             }
-                            // Stop searching if we hit a user prompt
-                            if (l.startsWith("❯") || l.startsWith("> ")) break;
+                            if (plain.startsWith("❯") || plain.startsWith("> ")) break;
                         }
                         if (lastAgentStart >= 0) {
                             for (int i = lastAgentStart; i < lines.size(); i++) {
-                                String l = lines.get(i);
-                                // Stop if we hit another user prompt
-                                if (i > lastAgentStart && (l.startsWith("❯") || l.startsWith("> "))) break;
-                                agentLines.add(l);
+                                String plain = stripFormatting(lines.get(i));
+                                if (i > lastAgentStart && (plain.startsWith("❯") || plain.startsWith("> "))) break;
+                                agentLines.add(lines.get(i));
                             }
                         }
 
-                        // Show "thinking..." if no agent response yet
+                        // Show "thinking..." only if user has sent a message
+                        boolean userHasSentMessage = lines.stream()
+                            .anyMatch(l -> {
+                                String p = stripFormatting(l);
+                                return p.startsWith("❯ ") || p.startsWith("> ");
+                            });
                         final List<String> floatingLines;
-                        if (agentLines.isEmpty()) {
+                        if (agentLines.isEmpty() && userHasSentMessage) {
                             floatingLines = List.of("thinking...");
+                        } else if (agentLines.isEmpty()) {
+                            floatingLines = Collections.emptyList();
                         } else {
                             floatingLines = agentLines;
                         }
-                        final boolean hasNewResponse = !agentLines.isEmpty() && !agentLines.equals(lastDisplayedLines);
+                        // Play sound only on transition from empty/thinking to having a response
+                        boolean wasEmpty = lastDisplayedLines.isEmpty();
+                        boolean nowHasContent = !agentLines.isEmpty();
+                        final boolean shouldPlaySound = wasEmpty && nowHasContent && !soundPlayedForCurrentResponse;
+
                         lastDisplayedLines = agentLines;
+
+                        // Reset sound flag when agent lines go empty (new question asked)
+                        if (agentLines.isEmpty()) {
+                            soundPlayedForCurrentResponse = false;
+                        }
+
                         MinecraftClient client = MinecraftClient.getInstance();
                         if (client != null) {
                             client.execute(() -> {
                                 floatingText.update(floatingLines);
-                                // Play sound when new response arrives
-                                if (hasNewResponse && client.player != null) {
+                                if (shouldPlaySound && client.player != null) {
                                     client.player.playSound(
                                         SoundEvents.ENTITY_VILLAGER_YES, 0.5f, 1.2f);
                                 }
                             });
+                            if (shouldPlaySound) {
+                                soundPlayedForCurrentResponse = true;
+                            }
                         }
                     }
 
@@ -147,5 +163,36 @@ public class OutputPoller {
 
     public List<String> getLastLines() {
         return lastLines.get();
+    }
+
+    /** Strip § formatting codes to get plain text for content checks */
+    private static String stripFormatting(String input) {
+        return input.replaceAll("§.", "");
+    }
+
+    /** Check if a line is Claude Code chrome that should be filtered out */
+    private static boolean isChromeLine(String line) {
+        String plain = stripFormatting(line);
+        if (plain.isEmpty()) return true;
+        if (plain.matches("^[─━\\-\\u2500-\\u257F]{3,}$")) return true;
+        if (plain.startsWith("[OMC#")) return true;
+        if (plain.contains("bypass permissions")) return true;
+        if (plain.contains("shift+tab to cycle")) return true;
+        if (plain.contains("Claude Code v")) return true;
+        if (plain.contains("Claude Max")) return true;
+        if (plain.contains("/remote-control")) return true;
+        if (plain.contains("session:")) return true;
+        if (plain.contains("context)")) return true;
+        if (plain.startsWith("~/")) return true;
+        if (plain.contains("claude.ai/code/")) return true;
+        if (plain.contains("Code in CLI")) return true;
+        if (plain.contains("active ·")) return true;
+        if (plain.contains("MCP server")) return true;
+        if (plain.contains("mcp server")) return true;
+        if (plain.contains("/mcp")) return true;
+        if (plain.equals(">") || plain.equals("❯") || plain.equals(")")) return true;
+        long boxChars = plain.chars().filter(c -> c >= 0x2500 && c <= 0x257F).count();
+        if (boxChars > 0 && boxChars >= plain.length() / 2) return true;
+        return false;
     }
 }

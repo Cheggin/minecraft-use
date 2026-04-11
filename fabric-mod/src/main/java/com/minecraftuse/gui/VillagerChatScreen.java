@@ -7,6 +7,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
 import java.io.File;
@@ -75,10 +76,10 @@ public class VillagerChatScreen extends Screen {
         for (String line : displayLines) {
             newWrapped.addAll(wrapText(line, maxTextWidth));
         }
-        boolean wasAtBottom = scrollOffset == 0 ||
-            scrollOffset >= wrappedLines.size() - MAX_DISPLAY_LINES;
+        int maxScroll = Math.max(0, wrappedLines.size() - MAX_DISPLAY_LINES);
+        boolean wasAtBottom = wrappedLines.isEmpty() || scrollOffset >= maxScroll;
         wrappedLines = newWrapped;
-        // Auto-scroll to bottom if we were already there
+        // Only auto-scroll to bottom if user was already at bottom
         if (wasAtBottom) {
             scrollOffset = Math.max(0, wrappedLines.size() - MAX_DISPLAY_LINES);
         }
@@ -110,7 +111,8 @@ public class VillagerChatScreen extends Screen {
         PaneConfig config = PaneConfig.load(new File("."));
         TmuxBridge bridge = new TmuxBridge(config.getTmuxSocket());
 
-        bridge.type(paneName, message)
+        bridge.read(paneName)
+            .thenCompose(ignored -> bridge.type(paneName, message))
             .thenCompose(ignored -> bridge.read(paneName))
             .thenCompose(ignored -> bridge.keys(paneName, "Enter"))
             .exceptionally(err -> {
@@ -143,14 +145,16 @@ public class VillagerChatScreen extends Screen {
         context.fill(PADDING, panelTop, PADDING + panelWidth, panelBottom, BACKGROUND_COLOR);
 
         // Header: villager name
-        context.drawText(textRenderer, "§l" + villageName, PADDING + 4, panelTop + 4, HEADER_COLOR, true);
+        context.drawText(textRenderer, Text.literal(villageName).formatted(net.minecraft.util.Formatting.GOLD, net.minecraft.util.Formatting.BOLD), PADDING + 4, panelTop + 4, HEADER_COLOR, true);
 
         // Output lines (pre-wrapped, scrollable)
         int lineY = panelTop + LINE_HEIGHT + 8;
         int maxVisibleLines = (panelBottom - INPUT_HEIGHT - PADDING * 2 - lineY) / LINE_HEIGHT;
         int end = Math.min(scrollOffset + maxVisibleLines, wrappedLines.size());
         for (int i = scrollOffset; i < end; i++) {
-            context.drawText(textRenderer, wrappedLines.get(i), PADDING + 4, lineY, TEXT_COLOR, false);
+            String line = wrappedLines.get(i);
+            Text formatted = com.minecraftuse.bridge.FormattedText.parse(line);
+            context.drawText(textRenderer, formatted, PADDING + 4, lineY, 0xFFFFFF, true);
             lineY += LINE_HEIGHT;
         }
 

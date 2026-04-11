@@ -84,12 +84,20 @@ public class FloatingText {
     }
 
     public void tick(Vec3d villagerPos) {
+        // Count visible stands to offset the base position upward
+        int visibleCount = 0;
+        for (ArmorStandEntity stand : stands) {
+            if (stand.isCustomNameVisible()) visibleCount++;
+        }
+        // Base Y: above the mob's head, shifted up by number of visible lines
+        double baseY = villagerPos.y + visibleCount * LINE_SPACING;
+
         for (int i = 0; i < stands.size(); i++) {
             ArmorStandEntity stand = stands.get(i);
             if (!stand.isRemoved()) {
                 stand.refreshPositionAndAngles(
                     villagerPos.x,
-                    villagerPos.y + i * LINE_SPACING,
+                    baseY + i * LINE_SPACING,
                     villagerPos.z,
                     stand.getYaw(),
                     stand.getPitch()
