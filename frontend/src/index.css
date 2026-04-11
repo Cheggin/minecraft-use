@@ -162,7 +162,7 @@ body {
   box-shadow:
     inset 2px 2px 0px #aaaaaa,
     inset -2px -2px 0px #555555;
-  padding: 16px 20px;
+  padding: 20px 20px 12px;
   cursor: pointer;
   overflow: visible;
 }
@@ -180,6 +180,7 @@ body {
   font-size: 16px;
   color: #e0e0e0;
   text-shadow: 2px 2px 0px #383838;
+  padding-top: 4px;
 }
 
 .mc-card-meta {
