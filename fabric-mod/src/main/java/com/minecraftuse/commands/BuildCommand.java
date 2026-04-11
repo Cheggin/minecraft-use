@@ -33,7 +33,7 @@ public class BuildCommand {
                         listSchematics(context.getSource());
                         return 1;
                     }))
-                .then(ClientCommandManager.argument("name", StringArgumentType.greedyString())
+                .then(ClientCommandManager.argument("name", StringArgumentType.word())
                     .executes(context -> {
                         String name = StringArgumentType.getString(context, "name");
                         executeBuild(context.getSource(), name);
