@@ -62,30 +62,30 @@ function MainMenu({ onNavigate }: { onNavigate: (page: Page) => void }) {
 
       <div className="relative z-10 flex flex-col items-center justify-between h-full py-4">
         {/* Title */}
-        <div className="flex flex-col items-center mt-[8vh] relative">
+        <div className="flex flex-col items-center mt-[4vh] sm:mt-[8vh] relative">
           <TitleLogo />
-          <div className="absolute -right-28 top-20">
-            <span className="mc-splash text-2xl whitespace-nowrap block">
+          <div className="absolute -right-4 sm:-right-28 -bottom-6 sm:top-20">
+            <span className="mc-splash text-sm sm:text-2xl whitespace-nowrap block">
               {splash}
             </span>
           </div>
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col items-center gap-3 w-[75vw] min-w-[320px] max-w-[800px]">
+        <div className="flex flex-col items-center gap-2 sm:gap-3 w-[90vw] sm:w-[75vw] max-w-[800px]">
           <McButton label="My Schematics" wide onClick={() => onNavigate("schematics")} />
           <McButton label="Browse Catalog" wide onClick={() => onNavigate("catalog")} />
 
-          <div className="flex gap-3 w-full mt-2">
+          <div className="flex gap-2 sm:gap-3 w-full mt-1 sm:mt-2">
             <McButton label="Settings..." half onClick={() => onNavigate("settings")} />
             <McButton label="About" half onClick={() => onNavigate("about")} />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between items-end w-full px-4">
+        <div className="flex justify-between items-end w-full px-3 sm:px-4">
           <span className="mc-version">Minecraft-Use v0.1.0</span>
-          <span className="mc-version opacity-60">
+          <span className="mc-version opacity-60 hidden sm:inline">
             Not affiliated with Mojang AB
           </span>
         </div>
@@ -128,13 +128,13 @@ function PageShell({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
           {children}
         </div>
 
         {/* Done button */}
-        <div className="px-6 py-5 flex justify-center">
-          <McButton label="Done" onClick={onBack} style={{ minWidth: "400px" }} />
+        <div className="px-4 sm:px-6 py-4 sm:py-5 flex justify-center">
+          <McButton label="Done" onClick={onBack} style={{ minWidth: "min(400px, 80vw)" }} />
         </div>
       </div>
     </div>
@@ -301,21 +301,21 @@ function TitleLogo() {
     <div className="flex flex-col items-center">
       <h1
         className="mc-title font-bold leading-none"
-        style={{ fontSize: "clamp(56px, 14vw, 120px)" }}
+        style={{ fontSize: "clamp(40px, 12vw, 120px)" }}
       >
         MINECRAFT
       </h1>
       <span
-        className="mc-subtitle leading-none mt-2"
-        style={{ fontSize: "clamp(28px, 7vw, 56px)" }}
+        className="mc-subtitle leading-none mt-1 sm:mt-2"
+        style={{ fontSize: "clamp(18px, 5vw, 56px)" }}
       >
         — USE —
       </span>
       <p
-        className="mt-4 text-center"
+        className="mt-2 sm:mt-4 text-center px-4"
         style={{
           fontFamily: "var(--font-minecraft)",
-          fontSize: "14px",
+          fontSize: "clamp(10px, 2.5vw, 14px)",
           color: "#cccccc",
           textShadow: "1px 1px 0px #3f3f3f",
         }}

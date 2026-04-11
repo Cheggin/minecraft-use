@@ -280,6 +280,39 @@ body {
   text-shadow: 1px 1px 0px #333333;
 }
 
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .mc-btn {
+    font-size: 14px;
+    min-height: 44px;
+    padding: 14px 16px 6px;
+  }
+
+  .mc-card {
+    padding: 14px 12px 10px;
+  }
+
+  .mc-card-title {
+    font-size: 13px;
+  }
+
+  .mc-card-meta {
+    font-size: 9px;
+  }
+
+  .mc-input {
+    font-size: 12px;
+    min-height: 36px;
+    padding: 8px 10px;
+  }
+
+  .mc-tag {
+    font-size: 10px;
+    min-height: 28px;
+    padding: 3px 8px;
+  }
+}
+
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar {
   width: 8px;
