@@ -117,6 +117,29 @@ public class TmuxBridge {
         });
     }
 
+    /**
+     * Read pane with ANSI color codes preserved (uses tmux directly with -e flag).
+     */
+    public CompletableFuture<String> readWithColor(String pane) {
+        return CompletableFuture.supplyAsync(() -> {
+            // First resolve the pane label to a tmux target
+            String target = runBridgeCommand("resolve", pane).trim();
+            if (target.isEmpty()) target = pane;
+
+            // Call tmux capture-pane directly with -e to preserve ANSI codes
+            List<String> cmd = new ArrayList<>();
+            cmd.add("/opt/homebrew/bin/tmux");
+            cmd.add("capture-pane");
+            cmd.add("-t");
+            cmd.add(target);
+            cmd.add("-p");
+            cmd.add("-e");
+            cmd.add("-S");
+            cmd.add("-50");
+            return runProcessRaw(cmd);  // Don't strip ANSI!
+        });
+    }
+
     private String runBridgeCommand(String command, String... args) {
         List<String> cmd = new ArrayList<>();
         cmd.add(TMUX_BRIDGE_PATH);
@@ -156,6 +179,41 @@ public class TmuxBridge {
                 throw new RuntimeException("tmux-bridge process timed out");
             }
             return AnsiStripper.strip(output.toString());
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("tmux-bridge error: " + e.getMessage(), e);
+        }
+    }
+
+    /** Like runProcess but does NOT strip ANSI codes — for readWithColor */
+    private String runProcessRaw(List<String> cmd) {
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.redirectErrorStream(true);
+
+        if (socketPath != null && !socketPath.isEmpty()) {
+            pb.environment().put("TMUX_BRIDGE_SOCKET", socketPath);
+        }
+        String currentPath = pb.environment().getOrDefault("PATH", "/usr/bin:/bin");
+        if (!currentPath.contains(HOMEBREW_BIN)) {
+            pb.environment().put("PATH", HOMEBREW_BIN + ":" + currentPath);
+        }
+
+        try {
+            Process process = pb.start();
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
+            boolean finished = process.waitFor(PROCESS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new RuntimeException("tmux-bridge process timed out");
+            }
+            return output.toString();  // No ANSI stripping!
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("tmux-bridge error: " + e.getMessage(), e);
