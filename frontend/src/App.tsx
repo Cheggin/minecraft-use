@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 
 type Page = "menu" | "schematics" | "catalog" | "settings" | "about";
 
@@ -107,7 +109,6 @@ function PageShell({
 }) {
   return (
     <div className="relative w-screen h-screen overflow-hidden select-none">
-      {/* Same background as main menu */}
       <img
         src="/minecraft-bg.webp"
         alt=""
@@ -117,7 +118,6 @@ function PageShell({
       <div className="absolute inset-0 bg-black/30" />
 
       <div className="relative z-10 flex flex-col h-full">
-        {/* Title */}
         <div className="flex items-center justify-center px-6 pt-6 pb-4">
           <h2
             className="mc-title leading-none"
@@ -127,12 +127,10 @@ function PageShell({
           </h2>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
           {children}
         </div>
 
-        {/* Done button */}
         <div className="px-4 sm:px-6 py-4 sm:py-5 flex justify-center">
           <McButton label="Done" onClick={onBack} style={{ minWidth: "min(400px, 80vw)" }} />
         </div>
@@ -144,30 +142,28 @@ function PageShell({
 /* ===== PAGES ===== */
 
 function SchematicsPage() {
+  const schematics = useQuery(api.schematics.listSchematics, { count: 50 });
+
   return (
     <div className="flex flex-col items-center gap-6">
       <p className="mc-page-text text-center">
         Your saved schematics will appear here.
       </p>
       <div className="grid grid-cols-1 gap-3 w-full max-w-[620px]">
-        <SchematicCard
-          name="Medieval Watchtower"
-          category="Castle"
-          dims="15x32x15"
-          blocks={3200}
-        />
-        <SchematicCard
-          name="Modern Villa"
-          category="House"
-          dims="30x12x25"
-          blocks={8100}
-        />
-        <SchematicCard
-          name="Dark Fantasy Tower"
-          category="Tower"
-          dims="12x45x12"
-          blocks={5400}
-        />
+        {schematics === undefined ? (
+          <p className="mc-page-text-dim text-center py-8">Loading...</p>
+        ) : schematics.length === 0 ? (
+          <p className="mc-page-text-dim text-center py-8">No schematics yet</p>
+        ) : (
+          schematics.map((s) => (
+            <SchematicCard
+              key={s._id}
+              name={s.name}
+              category={s.category ?? "Uncategorized"}
+              dimensions={s.dimensions}
+            />
+          ))
+        )}
       </div>
       <p className="mc-page-text-dim text-center text-xs mt-2">
         Use /build &lt;name&gt; in-game to place a schematic
@@ -176,42 +172,43 @@ function SchematicsPage() {
   );
 }
 
-const CATALOG_ITEMS = [
-  { name: "Medieval Watchtower", category: "Castle", dims: "15x32x15", blocks: 3200 },
-  { name: "Stone Keep", category: "Castle", dims: "20x18x20", blocks: 6100 },
-  { name: "Modern Villa", category: "House", dims: "30x12x25", blocks: 8100 },
-  { name: "Dark Fantasy Tower", category: "Tower", dims: "12x45x12", blocks: 5400 },
-  { name: "Cozy Cottage", category: "House", dims: "10x8x12", blocks: 1200 },
-  { name: "Grand Cathedral", category: "Medieval", dims: "40x55x30", blocks: 42000 },
-  { name: "Redstone Bunker", category: "Modern", dims: "18x10x18", blocks: 2800 },
-  { name: "Elven Treehouse", category: "Tower", dims: "22x38x22", blocks: 7200 },
-  { name: "Japanese Pagoda", category: "Tower", dims: "16x28x16", blocks: 4500 },
-  { name: "Viking Longhouse", category: "House", dims: "35x10x14", blocks: 3900 },
-];
-
-const CATEGORIES = ["All", ...Array.from(new Set(CATALOG_ITEMS.map((s) => s.category)))];
-
-function fuzzyMatch(text: string, query: string): boolean {
-  const lower = text.toLowerCase();
-  const q = query.toLowerCase();
-  let qi = 0;
-  for (let i = 0; i < lower.length && qi < q.length; i++) {
-    if (lower[i] === q[qi]) qi++;
-  }
-  return qi === q.length;
-}
-
 function CatalogPage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
 
-  const filtered = useMemo(() => {
-    return CATALOG_ITEMS.filter((item) => {
-      const matchesCategory = activeCategory === "All" || item.category === activeCategory;
-      const matchesSearch = !search || fuzzyMatch(item.name, search) || fuzzyMatch(item.category, search);
-      return matchesCategory && matchesSearch;
-    });
-  }, [search, activeCategory]);
+  const categories = useQuery(api.schematics.getCategories, {});
+
+  const searchResults = useQuery(
+    api.schematics.searchSchematics,
+    search.length > 0
+      ? {
+          query: search,
+          category: activeCategory !== "All" ? activeCategory : undefined,
+        }
+      : "skip"
+  );
+
+  const categoryResults = useQuery(
+    api.schematics.listByCategory,
+    activeCategory !== "All" && search.length === 0
+      ? { category: activeCategory }
+      : "skip"
+  );
+
+  const allResults = useQuery(
+    api.schematics.listSchematics,
+    activeCategory === "All" && search.length === 0
+      ? { count: 50 }
+      : "skip"
+  );
+
+  const displayItems = search.length > 0
+    ? searchResults
+    : activeCategory !== "All"
+      ? categoryResults
+      : allResults;
+
+  const allCategories = ["All", ...(categories ?? [])];
 
   return (
     <div className="flex flex-col items-center gap-6">
@@ -226,7 +223,7 @@ function CatalogPage() {
       </div>
 
       <div className="flex gap-2 flex-wrap justify-center">
-        {CATEGORIES.map((cat) => (
+        {allCategories.map((cat) => (
           <button
             key={cat}
             className={`mc-tag ${activeCategory === cat ? "mc-tag-active" : ""}`}
@@ -238,11 +235,18 @@ function CatalogPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 w-full max-w-[620px]">
-        {filtered.length === 0 ? (
+        {displayItems === undefined ? (
+          <p className="mc-page-text-dim text-center py-8">Loading...</p>
+        ) : displayItems.length === 0 ? (
           <p className="mc-page-text-dim text-center py-8">No schematics found</p>
         ) : (
-          filtered.map((item) => (
-            <SchematicCard key={item.name} {...item} />
+          displayItems.map((item) => (
+            <SchematicCard
+              key={item._id}
+              name={item.name}
+              category={item.category ?? "Uncategorized"}
+              dimensions={item.dimensions}
+            />
           ))
         )}
       </div>
@@ -253,13 +257,10 @@ function CatalogPage() {
 function SettingsPage() {
   return (
     <div className="flex flex-col gap-3 max-w-[620px] mx-auto">
-      {/* Top row - full width settings */}
       <div className="flex gap-2">
         <button className="mc-btn flex-1">Blocks/tick: 1000</button>
         <button className="mc-btn flex-1">Ghost Preview: ON</button>
       </div>
-
-      {/* Grid of options */}
       <div className="grid grid-cols-2 gap-2">
         <button className="mc-btn">Catalog Keybind: K</button>
         <button className="mc-btn">Sidecar Port: 8765</button>
@@ -273,6 +274,9 @@ function SettingsPage() {
 }
 
 function AboutPage() {
+  const schematics = useQuery(api.schematics.listSchematics, { count: 1 });
+  const schematicCount = schematics?.length ?? 0;
+
   return (
     <div className="flex flex-col items-center gap-4 max-w-[620px] mx-auto">
       <p className="mc-page-text text-center">
@@ -285,7 +289,7 @@ function AboutPage() {
         <button className="mc-btn">Java: 21</button>
         <button className="mc-btn">Sidecar: FastAPI</button>
         <button className="mc-btn">Backend: Convex</button>
-        <button className="mc-btn">Credits...</button>
+        <button className="mc-btn">Schematics: {schematicCount}</button>
       </div>
       <p className="mc-page-text-dim text-center text-xs mt-2">
         Not affiliated with Mojang Studios or Microsoft
@@ -353,20 +357,30 @@ function McButton({
 function SchematicCard({
   name,
   category,
-  dims,
-  blocks,
+  dimensions,
 }: {
   name: string;
   category: string;
-  dims: string;
-  blocks: number;
+  dimensions?: { width: number; height: number; length: number };
 }) {
+  const dims = dimensions
+    ? `${dimensions.width}x${dimensions.height}x${dimensions.length}`
+    : "unknown";
+  const blocks = dimensions
+    ? dimensions.width * dimensions.height * dimensions.length
+    : 0;
+
   return (
     <div className="mc-card flex items-center gap-4">
-      {/* Placeholder thumbnail */}
       <div className="mc-thumbnail flex items-center justify-center shrink-0">
         <span style={{ fontSize: "20px" }}>
-          {category === "Castle" ? "\u{1F3F0}" : category === "House" ? "\u{1F3E0}" : category === "Tower" ? "\u{1F5FC}" : "\u{1F3DB}"}
+          {category === "Castle"
+            ? "\u{1F3F0}"
+            : category === "House"
+              ? "\u{1F3E0}"
+              : category === "Tower"
+                ? "\u{1F5FC}"
+                : "\u{1F3DB}"}
         </span>
       </div>
       <div className="flex flex-col gap-1 min-w-0">
@@ -378,4 +392,3 @@ function SchematicCard({
     </div>
   );
 }
-

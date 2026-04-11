@@ -83,6 +83,30 @@ export const getSchematicFile = query({
   },
 });
 
+export const listByCategory = query({
+  args: {
+    category: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("schematics")
+      .withIndex("by_category", (q) => q.eq("category", args.category))
+      .take(50);
+  },
+});
+
+export const getCategories = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("schematics").take(200);
+    const categories = new Set<string>();
+    for (const s of all) {
+      if (s.category) categories.add(s.category);
+    }
+    return Array.from(categories).sort();
+  },
+});
+
 export const getSchematicByFileName = query({
   args: {
     fileName: v.string(),
