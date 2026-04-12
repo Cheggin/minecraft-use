@@ -1,84 +1,64 @@
 # Minecraft-Use
 
-Claude Code, inside Minecraft. Spawn AI villagers that can code, browse the web, find schematics, and build them in your world — all from in-game chat.
+Claude Code, inside Minecraft.
 
-## What It Does
+Spawn a villager, talk to it in chat, and it runs Claude Code for you — browsing the web, finding schematics, and placing builds in your world.
 
-- **Claude Code in Minecraft**: Spawn villagers powered by Claude Code that can write code, run commands, and answer questions via an in-game chat GUI
-- **Web Browsing**: Villagers use Browser Use to search the web, find schematics, and download them directly into your world
-- **Schematic Catalog**: Browse, search, and place schematics from a Convex-backed database
-- **Auto-Build**: Place downloaded schematics using Litematica integration
-- **Web Frontend**: Minecraft-styled website for browsing your schematic collection
+## Features
+
+- **In-game Claude Code** — chat with a villager that runs Claude via tmux + Browser Use
+- **Schematic search** — villager finds and downloads .schem files from the web
+- **Auto-build** — place schematics with Litematica
+- **Web catalog** — Minecraft-styled frontend for browsing saved schematics (Convex DB)
 
 ## Architecture
 
 ```
 fabric-mod/          Fabric 1.21.1 mod (Java 21)
-  commands/          /build, /catalog, /spawn, /claude, /shell, etc.
-  villager/          AI villager entity with floating text + chat GUI
-  bridge/            tmux bridge for sidecar communication
-  catalog/           In-game schematic catalog GUI
-  gui/               Villager chat screen, catalog screen
+  commands/          /spawn, /build, /claude, /catalog, /shell, etc.
+  villager/          AI villager with floating text + chat GUI
+  bridge/            tmux bridge to sidecar
 
-sidecar/             Python sidecar (FastAPI + Browser Use)
-  server.py          FastAPI server on localhost:8765
-  browser_repl.py    Browser Use REPL for AI agent browsing
-  browser_search.py  Schematic search via Browser Use
-  bulk_scraper.py    Bulk schematic downloader
-  index_builder.py   Catalog index builder
+sidecar/             Python (FastAPI + Browser Use)
+  server.py          localhost:8765
+  browser_repl.py    Browser Use REPL
 
-frontend/            Web frontend (Vite + React + Convex)
-  src/               Minecraft-styled landing page and catalog
-  convex/            Convex backend (schematic storage, search)
+frontend/            Vite + React + Convex
+  src/               Minecraft-styled UI
+  convex/            Schematic storage + search
 ```
-
-## Tech Stack
-
-- **Mod**: Fabric 1.21.1, Java 21, Fabric Loader 0.16.9
-- **Sidecar**: Python 3.12, FastAPI, Browser Use, Playwright
-- **Frontend**: Vite, React 19, Tailwind CSS v4, Convex
-- **Schematic Placement**: Litematica
-- **AI**: Claude API via Browser Use
 
 ## Getting Started
 
-### Mod
-
 ```bash
-cd fabric-mod
-./gradlew runClient
+# Mod
+cd fabric-mod && ./gradlew runClient
+
+# Sidecar
+cd sidecar && source venv/bin/activate && python server.py
+
+# Frontend
+cd frontend && npm install && npm run dev
 ```
 
-### Sidecar
+## Commands
 
-```bash
-cd sidecar
-source venv/bin/activate
-python server.py
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## In-Game Commands
-
-| Command | Description |
+| Command | What it does |
 |---------|-------------|
-| `/spawn` | Spawn an AI agent villager |
-| `/despawn` | Remove an AI villager |
-| `/claude <message>` | Send a message to Claude |
-| `/build <name>` | Place a schematic by name |
-| `/catalog` | Open the schematic catalog GUI |
-| `/download <url>` | Download a schematic from URL |
-| `/list` | List available schematics |
-| `/undo` | Undo the last schematic placement |
-| `/shell <cmd>` | Run a shell command via tmux |
+| `/spawn` | Spawn a Claude villager |
+| `/despawn` | Remove it |
+| `/claude <msg>` | Send a message to Claude |
+| `/build <name>` | Place a schematic |
+| `/catalog` | Open schematic browser |
+| `/download <url>` | Download a .schem file |
+| `/list` | List saved schematics |
+| `/undo` | Undo last placement |
+| `/shell <cmd>` | Run a shell command |
+
+## Stack
+
+Fabric 1.21.1 / Java 21 / Python 3.12 / FastAPI / Browser Use / Playwright / Vite / React 19 / Tailwind v4 / Convex / Litematica
 
 ## License
 
-GNU General Public License v3.0 - see [LICENSE](LICENSE) for details.
+GPL v3 — see [LICENSE](LICENSE).
