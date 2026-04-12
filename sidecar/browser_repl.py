@@ -215,12 +215,14 @@ If the top result is not free, try the next one."""
                     },
                 )
 
+                print(f"CONVEX_SUCCESS:doc_id={doc_id} file={file_name} size={len(file_bytes)}", flush=True)
                 output_lines.append(
                     f"Downloaded: {file_name} ({len(file_bytes)} bytes)"
                 )
                 output_lines.append(f"Saved to Convex: {doc_id}")
                 output_lines.append(f"Cached locally: {local_path}")
             except Exception as exc:
+                print(f"CONVEX_ERROR:{exc}", flush=True)
                 output_lines.append(f"File download error: {exc}")
     else:
         output_lines.append("No files were downloaded by the browser agent.")
