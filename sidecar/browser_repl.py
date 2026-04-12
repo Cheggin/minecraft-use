@@ -142,10 +142,12 @@ For the top result that has a schematic download:
 
 If there's a wait timer, handle it."""
     else:
-        search_url = f"https://www.minecraft-schematics.com/search/?q={query}"
+        search_url = "https://www.minecraft-schematics.com/search/"
         task = f"""Go to {search_url}
 
-Search for Minecraft schematics matching: {query}
+1. Find the search box on the page and type: {query}
+2. Submit the search
+3. Look through the results
 
 IMPORTANT: Skip any results that are marked as "non-free", "premium",
 "Patreon", or require payment. Only download FREE schematics.
