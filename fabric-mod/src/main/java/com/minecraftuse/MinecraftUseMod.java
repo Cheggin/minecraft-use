@@ -1,5 +1,7 @@
 package com.minecraftuse;
 
+import com.minecraftuse.commands.AgentChatCommand;
+import com.minecraftuse.commands.AgentTellCommand;
 import com.minecraftuse.commands.BrowserUseCommand;
 import com.minecraftuse.commands.BuildCommand;
 import com.minecraftuse.commands.CatalogCommand;
@@ -41,6 +43,8 @@ public class MinecraftUseMod implements ClientModInitializer {
         ModSounds.register();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            AgentChatCommand.register(dispatcher);
+            AgentTellCommand.register(dispatcher);
             BrowserUseCommand.register(dispatcher);
             BuildCommand.register(dispatcher);
             CatalogCommand.register(dispatcher);
