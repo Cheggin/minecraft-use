@@ -76,13 +76,13 @@ public class OutputPoller {
                         // Use plain text (strip §) for detection, keep formatted for display
                         List<String> agentLines = new java.util.ArrayList<>();
                         int lastAgentStart = -1;
+                        // Search ALL lines for the last agent marker — don't stop at ❯
                         for (int i = lines.size() - 1; i >= 0; i--) {
                             String plain = stripFormatting(lines.get(i));
                             if (plain.startsWith("●") || plain.startsWith("⏺")) {
                                 lastAgentStart = i;
                                 break;
                             }
-                            if (plain.startsWith("❯") || plain.startsWith("> ")) break;
                         }
                         if (lastAgentStart >= 0) {
                             for (int i = lastAgentStart; i < lines.size(); i++) {
@@ -92,29 +92,48 @@ public class OutputPoller {
                             }
                         }
 
-                        // Show "thinking..." only if user has sent a message
-                        boolean userHasSentMessage = lines.stream()
-                            .anyMatch(l -> {
-                                String p = stripFormatting(l);
-                                return p.startsWith("❯ ") || p.startsWith("> ");
-                            });
+                        // Show "thinking..." only if the LAST non-empty line is a user prompt
+                        // (meaning user just asked something and agent hasn't responded yet)
+                        boolean lastLineIsUserPrompt = false;
+                        for (int i = lines.size() - 1; i >= 0; i--) {
+                            String p = stripFormatting(lines.get(i));
+                            if (!p.isEmpty()) {
+                                lastLineIsUserPrompt = p.startsWith("❯ ") && p.length() > 2;
+                                break;
+                            }
+                        }
                         final List<String> floatingLines;
-                        if (agentLines.isEmpty() && userHasSentMessage) {
+                        String state;
+                        if (agentLines.isEmpty() && lastLineIsUserPrompt) {
                             floatingLines = List.of("thinking...");
+                            state = "THINKING";
+                        } else if (agentLines.isEmpty() && !lastDisplayedLines.isEmpty()) {
+                            floatingLines = lastDisplayedLines;
+                            state = "KEEP_LAST";
                         } else if (agentLines.isEmpty()) {
                             floatingLines = Collections.emptyList();
+                            state = "EMPTY";
                         } else {
                             floatingLines = agentLines;
+                            state = "RESPONSE";
                         }
+                        com.minecraftuse.MinecraftUseMod.LOGGER.info(
+                            "[OutputPoller] state={} agentLines={} lastDisplayed={} lastLineIsPrompt={} totalLines={} floatingSize={}",
+                            state, agentLines.size(), lastDisplayedLines.size(), lastLineIsUserPrompt, lines.size(), floatingLines.size()
+                        );
                         // Play sound only on transition from empty/thinking to having a response
                         boolean wasEmpty = lastDisplayedLines.isEmpty();
                         boolean nowHasContent = !agentLines.isEmpty();
                         final boolean shouldPlaySound = wasEmpty && nowHasContent && !soundPlayedForCurrentResponse;
 
-                        lastDisplayedLines = agentLines;
+                        // Only update lastDisplayedLines when we have actual new content
+                        if (!agentLines.isEmpty()) {
+                            lastDisplayedLines = agentLines;
+                        }
 
-                        // Reset sound flag when agent lines go empty (new question asked)
-                        if (agentLines.isEmpty()) {
+                        // Reset when user sends a new message (prompt with text is last line)
+                        if (lastLineIsUserPrompt) {
+                            lastDisplayedLines = Collections.emptyList();
                             soundPlayedForCurrentResponse = false;
                         }
 
