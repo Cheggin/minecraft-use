@@ -65,11 +65,13 @@ async def run_browser_task(task: str, start_url: str = None) -> dict:
 
     while True:
         status = await client.tasks.get_task_status(task_id)
+        print(f"STATUS:{status.status}", flush=True)
         if status.status in ("finished", "stopped"):
             break
         await asyncio.sleep(POLL_INTERVAL)
 
     result = await client.tasks.get_task(task_id)
+    print(f"RESULT:output={result.output}, files={len(result.output_files or [])}", flush=True)
 
     return {
         "task_id": task_id,
@@ -145,7 +147,14 @@ If there's a wait timer or CAPTCHA, handle it."""
         for f in result["output_files"]:
             try:
                 file_id = f.id
-                file_name = f.name if hasattr(f, "name") and f.name else "schematic.schem"
+                # Try to get filename from the file object, or derive from query
+                raw_name = f.name if hasattr(f, "name") and f.name else None
+                if raw_name:
+                    file_name = raw_name
+                else:
+                    # Use query as name, preserve .schematic if that's what was downloaded
+                    safe_query = query.replace(" ", "_").lower()
+                    file_name = f"{safe_query}.schematic"
 
                 # Get download URL from Browser Use
                 presigned = await client.files.get_task_output_file_presigned_url(
@@ -158,9 +167,12 @@ If there's a wait timer or CAPTCHA, handle it."""
                 )
 
                 # Download the file
+                print(f"DOWNLOADING:{download_url[:80]}...", flush=True)
                 async with httpx.AsyncClient() as http:
                     resp = await http.get(download_url)
                     file_bytes = resp.content
+
+                print(f"DOWNLOADED:{len(file_bytes)} bytes as {file_name}", flush=True)
 
                 # Save locally
                 CACHE_DIR.mkdir(exist_ok=True)
@@ -168,6 +180,7 @@ If there's a wait timer or CAPTCHA, handle it."""
                 local_path.write_bytes(file_bytes)
 
                 # Upload to Convex
+                print(f"UPLOADING_TO_CONVEX:{file_name}", flush=True)
                 doc_id = await upload_to_convex(
                     file_bytes,
                     file_name,
