@@ -107,6 +107,26 @@ export const getCategories = query({
   },
 });
 
+export const getSchematicByName = query({
+  args: {
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const schematics = await ctx.db.query("schematics").collect();
+    // Fuzzy match: case-insensitive, partial match on name or fileName
+    const query = args.name.toLowerCase();
+    const match = schematics.find(
+      (s) =>
+        s.name.toLowerCase().includes(query) ||
+        s.fileName.toLowerCase().includes(query) ||
+        s.fileName.toLowerCase().replace(".schem", "").replace(".schematic", "") === query
+    );
+    if (!match) return null;
+    const url = await ctx.storage.getUrl(match.fileId);
+    return { ...match, fileUrl: url };
+  },
+});
+
 export const getSchematicByFileName = query({
   args: {
     fileName: v.string(),

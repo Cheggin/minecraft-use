@@ -101,13 +101,11 @@ public class BuildCommand {
 
         Thread thread = new Thread(() -> {
             try {
-                String fileName = name.endsWith(".schem") ? name : name + ".schem";
-
-                // Query Convex for the schematic
+                // Query Convex for the schematic by name (fuzzy match)
                 JsonObject body = new JsonObject();
-                body.addProperty("path", "schematics:getSchematicByFileName");
+                body.addProperty("path", "schematics:getSchematicByName");
                 JsonObject queryArgs = new JsonObject();
-                queryArgs.addProperty("fileName", fileName);
+                queryArgs.addProperty("name", name);
                 body.add("args", queryArgs);
 
                 HttpRequest request = HttpRequest.newBuilder()
@@ -127,14 +125,15 @@ public class BuildCommand {
                 JsonElement value = result.get("value");
 
                 if (value == null || value.isJsonNull()) {
-                    sendFeedback(source, "§e[MCUse] §cSchematic not found in database: " + fileName);
+                    sendFeedback(source, "§e[MCUse] §cSchematic not found in database: " + name);
                     return;
                 }
 
                 JsonObject schematic = value.getAsJsonObject();
                 String fileUrl = schematic.has("fileUrl") && !schematic.get("fileUrl").isJsonNull()
                     ? schematic.get("fileUrl").getAsString() : null;
-                String schematicName = schematic.has("name") ? schematic.get("name").getAsString() : fileName;
+                String schematicName = schematic.has("name") ? schematic.get("name").getAsString() : name;
+                String fileName = schematic.has("fileName") ? schematic.get("fileName").getAsString() : name + ".schem";
 
                 if (fileUrl == null || fileUrl.isEmpty()) {
                     sendFeedback(source, "§e[MCUse] §cNo download URL for schematic: " + fileName);
