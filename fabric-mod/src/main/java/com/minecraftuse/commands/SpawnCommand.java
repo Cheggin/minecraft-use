@@ -35,25 +35,36 @@ public class SpawnCommand {
             ClientCommandManager.literal("agent")
                 .then(ClientCommandManager.argument("name", StringArgumentType.string())
                     .executes(context -> executeSpawn(context.getSource(),
-                        StringArgumentType.getString(context, "name"), "villager", null))
+                        StringArgumentType.getString(context, "name"), "villager", null, null))
+                    .then(ClientCommandManager.literal("--attach")
+                        .then(ClientCommandManager.argument("pane", StringArgumentType.string())
+                            .executes(context -> executeSpawn(context.getSource(),
+                                StringArgumentType.getString(context, "name"), "villager", null,
+                                StringArgumentType.getString(context, "pane")))
+                            .then(ClientCommandManager.argument("mob_type_attach", StringArgumentType.string())
+                                .executes(context -> executeSpawn(context.getSource(),
+                                    StringArgumentType.getString(context, "name"),
+                                    StringArgumentType.getString(context, "mob_type_attach"), null,
+                                    StringArgumentType.getString(context, "pane"))))))
                     .then(ClientCommandManager.argument("mob_type", StringArgumentType.string())
                         .executes(context -> executeSpawn(context.getSource(),
                             StringArgumentType.getString(context, "name"),
-                            StringArgumentType.getString(context, "mob_type"), null))
+                            StringArgumentType.getString(context, "mob_type"), null, null))
                         .then(ClientCommandManager.argument("command", StringArgumentType.greedyString())
                             .executes(context -> executeSpawn(context.getSource(),
                                 StringArgumentType.getString(context, "name"),
                                 StringArgumentType.getString(context, "mob_type"),
-                                StringArgumentType.getString(context, "command"))))))
+                                StringArgumentType.getString(context, "command"), null)))))
         );
     }
 
     private static final String DEFAULT_COMMAND = "lfg";
 
-    private static int executeSpawn(FabricClientCommandSource source, String name, String mobType, String command) {
+    private static int executeSpawn(FabricClientCommandSource source, String name, String mobType, String command, String attachPane) {
         // Default to lfg (Claude Code) if no command specified
         final String finalCommand = (command == null || command.isBlank()) ? DEFAULT_COMMAND : command;
         final String finalMobType = (mobType == null || mobType.isBlank()) ? "villager" : mobType.toLowerCase();
+        final String finalAttachPane = attachPane;
         VillagerRegistry registry = VillagerRegistry.getInstance();
 
         if (registry.contains(name)) {
@@ -70,45 +81,51 @@ public class SpawnCommand {
         // Run the rest async to avoid blocking the game thread
         Thread spawnThread = new Thread(() -> {
             try {
-                // Ensure the agents window exists in the minecraft-use session
-                String existingWindows = runProcess(List.of(
-                    TMUX_PATH, "list-windows", "-t", TMUX_SESSION, "-F", "#{window_name}"
-                ));
-                boolean agentsWindowExists = existingWindows.lines()
-                    .anyMatch(line -> line.trim().equals(AGENTS_WINDOW));
+                String paneName;
 
-                if (!agentsWindowExists) {
-                    runProcess(List.of(TMUX_PATH, "new-window", "-t", TMUX_SESSION, "-n", AGENTS_WINDOW));
+                if (finalAttachPane != null) {
+                    // Attach to existing pane — no new pane creation
+                    paneName = finalAttachPane;
+                    sendFeedbackOnMain(source, "§e[MCUse] §7Attaching to existing pane: §f" + paneName);
+                } else {
+                    // Create a new pane
+                    String existingWindows = runProcess(List.of(
+                        TMUX_PATH, "list-windows", "-t", TMUX_SESSION, "-F", "#{window_name}"
+                    ));
+                    boolean agentsWindowExists = existingWindows.lines()
+                        .anyMatch(line -> line.trim().equals(AGENTS_WINDOW));
+
+                    if (!agentsWindowExists) {
+                        runProcess(List.of(TMUX_PATH, "new-window", "-t", TMUX_SESSION, "-n", AGENTS_WINDOW));
+                    }
+
+                    runProcess(List.of(TMUX_PATH, "split-window", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW));
+                    runProcess(List.of(TMUX_PATH, "select-layout", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW, "tiled"));
+
+                    String paneId = runProcess(List.of(
+                        TMUX_PATH, "display-message", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW, "-p", "#{pane_id}"
+                    )).trim();
+                    if (paneId.isEmpty()) {
+                        sendFeedbackOnMain(source, "§e[MCUse] §cFailed to get tmux pane ID.");
+                        return;
+                    }
+
+                    runProcess(List.of(TMUX_BRIDGE_PATH, "name", paneId, name));
+                    paneName = name;
+
+                    PaneConfig config = PaneConfig.load(new File("."));
+                    TmuxBridge bridge = new TmuxBridge(config.getTmuxSocket());
+
+                    // Run command in the new pane
+                    bridge.read(paneName).get();
+                    bridge.type(paneName, finalCommand).get();
+                    bridge.read(paneName).get();
+                    bridge.keys(paneName, "Enter").get();
                 }
-
-                // Create a new pane in the agents window and apply tiled layout
-                runProcess(List.of(TMUX_PATH, "split-window", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW));
-                runProcess(List.of(TMUX_PATH, "select-layout", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW, "tiled"));
-
-                // Capture new pane ID from the agents window
-                String paneId = runProcess(List.of(
-                    TMUX_PATH, "display-message", "-t", TMUX_SESSION + ":" + AGENTS_WINDOW, "-p", "#{pane_id}"
-                )).trim();
-                if (paneId.isEmpty()) {
-                    sendFeedbackOnMain(source, "§e[MCUse] §cFailed to get tmux pane ID.");
-                    return;
-                }
-
-                // Name the pane via tmux-bridge
-                runProcess(List.of(TMUX_BRIDGE_PATH, "name", paneId, name));
-
-                PaneConfig config = PaneConfig.load(new File("."));
-                TmuxBridge bridge = new TmuxBridge(config.getTmuxSocket());
-
-                // Run command in the pane
-                bridge.read(name).get();
-                bridge.type(name, finalCommand).get();
-                bridge.read(name).get();
-                bridge.keys(name, "Enter").get();
 
                 // Spawn the villager on the main thread
                 MinecraftClient client = MinecraftClient.getInstance();
-                final String finalPaneId = paneId;
+                final String finalPaneName = paneName;
                 client.execute(() -> {
                     if (client.player == null || client.world == null) {
                         sendFeedbackOnMain(source, "§e[MCUse] §cNot in a world.");
@@ -131,12 +148,14 @@ public class SpawnCommand {
 
                     AgentVillager agent = AgentVillager.spawn(serverWorld, spawnPos, name, finalMobType);
 
-                    OutputPoller poller = new OutputPoller(bridge, name, floatingText);
+                    PaneConfig cfg = PaneConfig.load(new File("."));
+                    TmuxBridge br = new TmuxBridge(cfg.getTmuxSocket());
+                    OutputPoller poller = new OutputPoller(br, finalPaneName, floatingText);
                     poller.start();
 
                     VillagerRegistry.AgentVillagerData data = new VillagerRegistry.AgentVillagerData(
                         agent.getEntity(),
-                        name,
+                        finalPaneName,
                         floatingText,
                         poller
                     );
