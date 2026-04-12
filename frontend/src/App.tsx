@@ -26,7 +26,9 @@ export default function App() {
   const [page, setPage] = useState<Page>("menu");
 
   const navigate = (target: Page) => {
-    console.log(`[navigate] ${page} → ${target}`);
+    console.log(`[navigate] ${page} -> ${target}`);
+    // Ping the dev server so the request appears in logs
+    fetch(`/__log?nav=${page}-to-${target}`).catch(() => {});
     setPage(target);
   };
 
@@ -261,19 +263,13 @@ function CatalogPage() {
 
 function SettingsPage() {
   return (
-    <div className="flex flex-col gap-3 max-w-[620px] mx-auto">
-      <div className="flex gap-2">
-        <button className="mc-btn flex-1">Blocks/tick: 1000</button>
-        <button className="mc-btn flex-1">Ghost Preview: ON</button>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <button className="mc-btn">Catalog Keybind: K</button>
-        <button className="mc-btn">Sidecar Port: 8765</button>
-        <button className="mc-btn">Auto-Place: OFF</button>
-        <button className="mc-btn">Show Tooltips: ON</button>
-        <button className="mc-btn">Material Swap...</button>
-        <button className="mc-btn">Ghost Opacity: 40%</button>
-      </div>
+    <div className="flex flex-col items-center gap-6 max-w-[620px] mx-auto">
+      <p className="mc-page-text text-center">
+        Settings are configured in-game via the mod.
+      </p>
+      <p className="mc-page-text-dim text-center">
+        This page is a placeholder — nothing here is wired up yet.
+      </p>
     </div>
   );
 }
