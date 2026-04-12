@@ -123,21 +123,42 @@ async def upload_to_convex(file_bytes: bytes, file_name: str, metadata: dict) ->
         return resp.json()["value"]
 
 
-async def run_get_schematics(query: str) -> str:
-    """Search for schematics, download them, and store in Convex."""
-    task = f"""Go to https://www.minecraft-schematics.com/search/?q={query}
+async def run_get_schematics(query: str, site: str = "mc") -> str:
+    """Search for schematics, download them, and store in Convex.
+
+    site: 'mc' for minecraft-schematics.com, 'planet' for planetminecraft.com
+    """
+    if site == "planet":
+        search_url = f"https://www.planetminecraft.com/projects/tag/free/?keywords={query}&share=schematic"
+        task = f"""Go to {search_url}
 
 Search for Minecraft schematics matching: {query}
 
-For the top result:
-1. Click into the schematic page
-2. Find and click the download button
+For the top result that has a schematic download:
+1. Click into the project page
+2. Find and click the schematic download button/link
 3. Download the .schem or .schematic file
 4. Tell me the name, author, and category of the schematic
 
-If there's a wait timer or CAPTCHA, handle it."""
+If there's a wait timer, handle it."""
+    else:
+        search_url = f"https://www.minecraft-schematics.com/search/?q={query}"
+        task = f"""Go to {search_url}
 
-    search_url = f"https://www.minecraft-schematics.com/search/?q={query}"
+Search for Minecraft schematics matching: {query}
+
+IMPORTANT: Skip any results that are marked as "non-free", "premium",
+"Patreon", or require payment. Only download FREE schematics.
+
+For the top FREE result:
+1. Click into the schematic page
+2. Verify it is free to download (not behind a paywall)
+3. Find and click the download button
+4. Download the .schem or .schematic file
+5. Tell me the name, author, and category of the schematic
+
+If there's a wait timer or CAPTCHA, handle it.
+If the top result is not free, try the next one."""
     result = await run_browser_task(task, start_url=search_url)
     output_lines = [result["output"]]
 
@@ -215,9 +236,16 @@ async def handle_command(line: str) -> tuple[str, bool]:
     if stripped == "get-schematics" or stripped.startswith("get-schematics "):
         query = stripped[len("get-schematics"):].strip()
         if not query:
-            return ("Usage: get-schematics <query>", False)
+            return ("Usage: get-schematics <query> [--site mc|planet]", False)
+        # Parse --site flag
+        site = "mc"  # default to minecraft-schematics.com
+        if "--site" in query:
+            parts = query.split("--site")
+            query = parts[0].strip()
+            site_arg = parts[1].strip().split()[0] if parts[1].strip() else "mc"
+            site = site_arg.lower()
         try:
-            result = await run_get_schematics(query)
+            result = await run_get_schematics(query, site=site)
         except Exception as exc:
             result = f"Error: {exc}"
         return (result, False)
