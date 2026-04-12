@@ -86,17 +86,58 @@ public class ListenCommand {
                     // Process is NOT in tmux — create a new pane
                     paneLabelToUse = name;
 
-                    // Try to find a log file for this process via its working directory
-                    String cwd = runProcess(List.of("lsof", "-p", primaryPid, "-d", "cwd", "-Fn")).trim();
+                    // Try to find a log file for this process
+                    // 1. Check the process's working directory
+                    // 2. Search common project locations relative to the user's home
                     String logFile = null;
-                    for (String line : cwd.split("\n")) {
-                        if (line.startsWith("n") && line.length() > 1) {
-                            String dir = line.substring(1);
-                            File candidate = new File(dir, ".vite-requests.log");
-                            if (candidate.exists()) {
-                                logFile = candidate.getAbsolutePath();
+                    try {
+                        String cwdOutput = runProcess(List.of("lsof", "-p", primaryPid, "-d", "cwd", "-Fn")).trim();
+                        for (String line : cwdOutput.split("\n")) {
+                            if (line.startsWith("n") && line.length() > 1) {
+                                String dir = line.substring(1);
+                                // Check the cwd itself and a frontend/ subdirectory
+                                for (String candidate : new String[]{
+                                    dir + "/.vite-requests.log",
+                                    dir + "/frontend/.vite-requests.log"
+                                }) {
+                                    if (new File(candidate).exists()) {
+                                        logFile = candidate;
+                                        break;
+                                    }
+                                }
+                                // Also walk up to find a project root with frontend/
+                                if (logFile == null) {
+                                    File current = new File(dir);
+                                    for (int depth = 0; depth < 5 && current != null; depth++) {
+                                        File check = new File(current, "frontend/.vite-requests.log");
+                                        if (check.exists()) {
+                                            logFile = check.getAbsolutePath();
+                                            break;
+                                        }
+                                        check = new File(current, ".vite-requests.log");
+                                        if (check.exists()) {
+                                            logFile = check.getAbsolutePath();
+                                            break;
+                                        }
+                                        current = current.getParentFile();
+                                    }
+                                }
+                                break;
                             }
-                            break;
+                        }
+                    } catch (Exception ignored) {}
+
+                    // Last resort: check well-known location
+                    if (logFile == null) {
+                        String home = System.getProperty("user.home");
+                        String[] searchPaths = {
+                            home + "/Documents/GitHub/minecraft-use/frontend/.vite-requests.log"
+                        };
+                        for (String path : searchPaths) {
+                            if (new File(path).exists()) {
+                                logFile = path;
+                                break;
+                            }
                         }
                     }
 
@@ -145,6 +186,41 @@ public class ListenCommand {
                 PaneConfig config = PaneConfig.load(new File("."));
                 TmuxBridge bridge = new TmuxBridge(config.getTmuxSocket());
 
+                // Determine if we have a log file for direct reading
+                final File directLogFile;
+                if (existingPaneId == null) {
+                    // In the "not in tmux" path, check if we found a log file
+                    String home = System.getProperty("user.home");
+                    File candidate = new File(home + "/Documents/GitHub/minecraft-use/frontend/.vite-requests.log");
+                    // Also try process cwd-based detection
+                    File foundLog = null;
+                    try {
+                        String cwdOut = runProcess(List.of("lsof", "-p", primaryPid, "-d", "cwd", "-Fn")).trim();
+                        for (String cwdLine : cwdOut.split("\n")) {
+                            if (cwdLine.startsWith("n") && cwdLine.length() > 1) {
+                                String dir = cwdLine.substring(1);
+                                for (String p : new String[]{dir + "/.vite-requests.log", dir + "/frontend/.vite-requests.log"}) {
+                                    if (new File(p).exists()) { foundLog = new File(p); break; }
+                                }
+                                if (foundLog == null) {
+                                    File cur = new File(dir);
+                                    for (int d = 0; d < 5 && cur != null; d++) {
+                                        File c = new File(cur, "frontend/.vite-requests.log");
+                                        if (c.exists()) { foundLog = c; break; }
+                                        c = new File(cur, ".vite-requests.log");
+                                        if (c.exists()) { foundLog = c; break; }
+                                        cur = cur.getParentFile();
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    directLogFile = foundLog != null ? foundLog : (candidate.exists() ? candidate : null);
+                } else {
+                    directLogFile = null; // Attached to tmux pane, read from there
+                }
+
                 // Spawn the villager on the main thread
                 MinecraftClient client = MinecraftClient.getInstance();
                 final String displayName = processName.isEmpty() ? "port-" + port : processName;
@@ -174,7 +250,9 @@ public class ListenCommand {
                     AgentVillager agent = AgentVillager.spawn(serverWorld, spawnPos, name, MOB_TYPE);
                     agent.getEntity().setInvulnerable(false);
 
-                    LogOutputPoller poller = new LogOutputPoller(bridge, finalPaneName, floatingText);
+                    LogOutputPoller poller = directLogFile != null
+                        ? new LogOutputPoller(bridge, finalPaneName, floatingText, directLogFile)
+                        : new LogOutputPoller(bridge, finalPaneName, floatingText);
                     poller.start();
 
                     VillagerRegistry.AgentVillagerData data = new VillagerRegistry.AgentVillagerData(
@@ -186,7 +264,9 @@ public class ListenCommand {
                     );
                     registry.register(name, data);
 
-                    String mode = attachedToExisting ? "§aattached to tmux pane" : "§7using ports watch";
+                    String mode = attachedToExisting ? "§aattached to tmux pane"
+                        : directLogFile != null ? "§areading log file directly"
+                        : "§7using ports watch";
                     source.sendFeedback(Text.literal(
                         "§e[MCUse] §aListening on port §f" + port
                         + " §7(" + displayName + " PID " + primaryPid + ")"
