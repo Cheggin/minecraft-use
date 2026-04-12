@@ -2,6 +2,7 @@ package com.minecraftuse;
 
 import com.minecraftuse.commands.AgentChatCommand;
 import com.minecraftuse.commands.AgentTellCommand;
+import com.minecraftuse.commands.VoiceCommand;
 import com.minecraftuse.commands.BrowserUseCommand;
 import com.minecraftuse.commands.BuildCommand;
 import com.minecraftuse.commands.CatalogCommand;
@@ -62,13 +63,14 @@ public class MinecraftUseMod implements ClientModInitializer {
 
         VillagerInteractionHandler.init();
 
-        // Register K keybind to open the catalog screen
+        // Register keybinds
         openCatalogKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.minecraft-use.open_catalog",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_K,
             "category.minecraft-use"
         ));
+        VoiceCommand.register();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openCatalogKey.wasPressed()) {
@@ -77,6 +79,7 @@ public class MinecraftUseMod implements ClientModInitializer {
                 }
             }
             VillagerRegistry.getInstance().tickAll();
+            VoiceCommand.tick(client);
         });
 
         LOGGER.info("Minecraft Use mod initialized — commands and keybinds registered");

@@ -92,8 +92,34 @@ public class VillagerChatScreen extends Screen {
         return true;
     }
 
+    private boolean voiceRecording = false;
+
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // Backtick (GLFW_KEY_GRAVE_ACCENT = 96) — start voice recording
+        if (keyCode == 96 && !voiceRecording) {
+            voiceRecording = true;
+            inputField.setText("");
+            inputField.setPlaceholder(Text.literal("Recording... release ` to stop"));
+            // Start recording on sidecar
+            Thread startThread = new Thread(() -> {
+                try {
+                    java.net.http.HttpClient.newHttpClient().send(
+                        java.net.http.HttpRequest.newBuilder()
+                            .uri(java.net.URI.create("http://localhost:8765/transcribe/start-recording"))
+                            .header("Content-Type", "application/json")
+                            .POST(java.net.http.HttpRequest.BodyPublishers.ofString("{}"))
+                            .build(),
+                        java.net.http.HttpResponse.BodyHandlers.ofString()
+                    );
+                } catch (Exception e) {
+                    com.minecraftuse.MinecraftUseMod.LOGGER.error("[Voice] Start recording failed: {}", e.getMessage());
+                }
+            }, "VoiceStart");
+            startThread.setDaemon(true);
+            startThread.start();
+            return true;
+        }
         // Enter key = 257, KP Enter = 335
         if (keyCode == 257 || keyCode == 335) {
             String text = inputField.getText().trim();
@@ -104,6 +130,55 @@ public class VillagerChatScreen extends Screen {
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        // Backtick released — stop recording and transcribe
+        if (keyCode == 96 && voiceRecording) {
+            voiceRecording = false;
+            inputField.setPlaceholder(Text.literal("Transcribing..."));
+            // Stop recording and get transcription
+            Thread thread = new Thread(() -> {
+                try {
+                    var response = java.net.http.HttpClient.newHttpClient().send(
+                        java.net.http.HttpRequest.newBuilder()
+                            .uri(java.net.URI.create("http://localhost:8765/transcribe/stop-recording"))
+                            .header("Content-Type", "application/json")
+                            .POST(java.net.http.HttpRequest.BodyPublishers.ofString("{}"))
+                            .build(),
+                        java.net.http.HttpResponse.BodyHandlers.ofString()
+                    );
+
+                    var result = new com.google.gson.Gson().fromJson(
+                        response.body(), com.google.gson.JsonObject.class);
+                    if (result.has("text")) {
+                        String text = result.get("text").getAsString().trim();
+                        if (!text.isEmpty()) {
+                            MinecraftClient.getInstance().execute(() -> setInputText(text));
+                        } else {
+                            MinecraftClient.getInstance().execute(() ->
+                                inputField.setPlaceholder(Text.literal("Type a message...")));
+                        }
+                    }
+                } catch (Exception e) {
+                    MinecraftClient.getInstance().execute(() -> {
+                        inputField.setPlaceholder(Text.literal("Voice error — type instead"));
+                    });
+                }
+            }, "VoiceStop");
+            thread.setDaemon(true);
+            thread.start();
+            return true;
+        }
+        return super.keyReleased(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char chr, int modifiers) {
+        // Block backtick from typing into text field when recording
+        if (chr == '`') return true;
+        return super.charTyped(chr, modifiers);
     }
 
     private void sendToPane(String message) {
@@ -195,6 +270,16 @@ public class VillagerChatScreen extends Screen {
             lines.add(text);
         }
         return lines;
+    }
+
+    /** Set text in the input field — used by voice transcription */
+    public void setInputText(String text) {
+        if (inputField != null) {
+            inputField.setPlaceholder(Text.literal("Type a message..."));
+            inputField.setText(text);
+            inputField.setCursorToEnd(false);
+            inputField.setFocused(true);
+        }
     }
 
     @Override
