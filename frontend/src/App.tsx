@@ -275,7 +275,7 @@ function SettingsPage() {
 }
 
 function AboutPage() {
-  const schematics = useQuery(api.schematics.listSchematics, { count: 1 });
+  const schematics = useQuery(api.schematics.listSchematics, { count: 200 });
   const schematicCount = schematics?.length ?? 0;
 
   return (
