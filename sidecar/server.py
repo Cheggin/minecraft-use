@@ -99,6 +99,7 @@ async def start_recording():
 
     _recording = True
     _audio_chunks = []
+    print("[Voice] Recording started...", flush=True)
 
     def record_loop():
         global _recording
@@ -106,6 +107,7 @@ async def start_recording():
             chunk = sd.rec(int(SAMPLE_RATE * 0.1), samplerate=SAMPLE_RATE, channels=1, dtype="float32")
             sd.wait()
             _audio_chunks.append(chunk)
+        print(f"[Voice] Recording stopped. {len(_audio_chunks)} chunks captured.", flush=True)
 
     import threading
     t = threading.Thread(target=record_loop, daemon=True)
@@ -146,6 +148,7 @@ async def stop_recording():
         tmp_path = tmp.name
 
     try:
+        print(f"[Voice] Sending {duration:.1f}s audio to Whisper...", flush=True)
         client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
         with open(tmp_path, "rb") as audio_file:
             transcript = client.audio.transcriptions.create(
@@ -153,9 +156,11 @@ async def stop_recording():
                 file=audio_file,
             )
         os.unlink(tmp_path)
+        print(f"[Voice] Transcribed: '{transcript.text}'", flush=True)
         return {"text": transcript.text, "duration": duration}
     except Exception as e:
         os.unlink(tmp_path)
+        print(f"[Voice] Error: {e}", flush=True)
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
