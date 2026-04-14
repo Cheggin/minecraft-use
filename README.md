@@ -1,6 +1,6 @@
 # minecraft-code
 
-[![npm](https://img.shields.io/npm/v/minecraft-code)](https://www.npmjs.com/package/minecraft-code)
+[![npm](https://img.shields.io/npm/v/@reaganhsu/minecraft-code)](https://www.npmjs.com/package/@reaganhsu/minecraft-code)
 
 Turn Minecraft into a terminal interface for AI agents. Spawn Claude Code, Browser Use, or any CLI tool as Minecraft villagers that follow you around, display output above their heads, and respond to your messages.
 
@@ -17,7 +17,7 @@ Turn Minecraft into a terminal interface for AI agents. Spawn Claude Code, Brows
 
 ```bash
 # Install
-npm install -g minecraft-code
+npm install -g @reaganhsu/minecraft-code
 
 # Check prerequisites
 minecraft-code doctor
