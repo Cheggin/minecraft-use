@@ -144,14 +144,39 @@ Supports:
 
 Run `minecraft-code doctor` to check everything.
 
-## Environment Variables
+## Setup Guide
+
+### 1. Browser Use API Key (required for schematic downloading)
+
+1. Go to [cloud.browser-use.com](https://cloud.browser-use.com)
+2. Sign up and create an API key
+3. (Optional) Create a browser profile for persistent sessions — save the profile ID
+
+### 2. Convex Database (required for schematic storage)
+
+1. Install Convex: `npm install convex`
+2. Set up a new project: `npx convex dev` in the `frontend/` directory
+3. This creates the schematic storage tables and functions
+4. Note your Convex deployment URL (e.g., `https://your-project.convex.cloud`)
+
+### 3. Environment Variables
 
 Create a `.env` file in the project root:
 
 ```env
+# Required for schematic downloading
 BROWSER_USE_API_KEY=bu_your_key_here
+
+# Optional — for voice transcription
 OPENAI_API_KEY=sk_your_key_here
 ```
+
+### 4. Convex Configuration
+
+If you're using your own Convex deployment, update the `CONVEX_URL` in:
+- `sidecar/browser_repl.py`
+- `fabric-mod/src/main/java/com/minecraftuse/commands/BuildCommand.java`
+- `fabric-mod/src/main/java/com/minecraftuse/catalog/CatalogIndex.java`
 
 ## CLI
 
