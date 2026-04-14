@@ -1,6 +1,6 @@
-# minecraft-use
+# minecraft-code
 
-[![npm](https://img.shields.io/npm/v/minecraft-use)](https://www.npmjs.com/package/minecraft-use)
+[![npm](https://img.shields.io/npm/v/minecraft-code)](https://www.npmjs.com/package/minecraft-code)
 
 Turn Minecraft into a terminal interface for AI agents. Spawn Claude Code, Browser Use, or any CLI tool as Minecraft villagers that follow you around, display output above their heads, and respond to your messages.
 
@@ -17,16 +17,16 @@ Turn Minecraft into a terminal interface for AI agents. Spawn Claude Code, Brows
 
 ```bash
 # Install
-npm install -g minecraft-use
+npm install -g minecraft-code
 
 # Check prerequisites
-minecraft-use doctor
+minecraft-code doctor
 
 # Set up everything (venv, mod build, dependencies)
-minecraft-use init
+minecraft-code init
 
 # Launch (tmux + sidecar + Claude Code + Minecraft)
-minecraft-use start
+minecraft-code start
 ```
 
 ## How It Works
@@ -45,7 +45,7 @@ Minecraft Chat  →  TmuxBridge.java  →  tmux-bridge CLI  →  tmux pane
 ## Architecture
 
 ```
-tmux session "minecraft-use"
+tmux session "minecraft-code"
 ┌──────────────┬──────────────┐
 │  sidecar     │  claude      │
 │  (FastAPI)   │  (lfg)       │
@@ -140,9 +140,9 @@ Supports:
 | tmux | 3.x+ | `brew install tmux` |
 | Python | 3.12+ | `brew install python@3.12` |
 | Node.js | 18+ | `brew install node` |
-| smux | latest | auto-installed by `minecraft-use init` |
+| smux | latest | auto-installed by `minecraft-code init` |
 
-Run `minecraft-use doctor` to check everything.
+Run `minecraft-code doctor` to check everything.
 
 ## Environment Variables
 
@@ -156,10 +156,10 @@ OPENAI_API_KEY=sk_your_key_here
 ## CLI
 
 ```bash
-minecraft-use doctor    # Check prerequisites
-minecraft-use init      # Set up everything
-minecraft-use start     # Launch tmux environment + Minecraft
-minecraft-use stop      # Kill tmux session
+minecraft-code doctor    # Check prerequisites
+minecraft-code init      # Set up everything
+minecraft-code start     # Launch tmux environment + Minecraft
+minecraft-code stop      # Kill tmux session
 ```
 
 ## Development

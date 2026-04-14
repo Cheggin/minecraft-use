@@ -2,7 +2,7 @@
 'use strict';
 
 const USAGE = `
-Usage: minecraft-use <command>
+Usage: minecraft-code <command>
 
 Commands:
   init      Set up prerequisites, build the mod, create venv
@@ -11,10 +11,10 @@ Commands:
   doctor    Check all prerequisites and setup status
 
 Examples:
-  minecraft-use init
-  minecraft-use start
-  minecraft-use stop
-  minecraft-use doctor
+  minecraft-code init
+  minecraft-code start
+  minecraft-code stop
+  minecraft-code doctor
 `;
 
 const command = process.argv[2];

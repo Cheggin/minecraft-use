@@ -1,5 +1,5 @@
 {
-  "name": "minecraft-use",
+  "name": "minecraft-code",
   "version": "0.1.0",
   "description": "Control Minecraft with AI agents — Claude Code, Browser Use, and more via tmux-bridge",
   "keywords": [
@@ -12,14 +12,14 @@
     "llm",
     "agent"
   ],
-  "homepage": "https://github.com/Cheggin/minecraft-use",
+  "homepage": "https://github.com/Cheggin/minecraft-code",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Cheggin/minecraft-use.git"
+    "url": "https://github.com/Cheggin/minecraft-code.git"
   },
   "license": "MIT",
   "bin": {
-    "minecraft-use": "./bin/cli.js"
+    "minecraft-code": "./bin/cli.js"
   },
   "files": [
     "bin/",
