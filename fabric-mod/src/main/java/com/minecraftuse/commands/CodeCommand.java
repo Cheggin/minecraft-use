@@ -10,6 +10,7 @@ import net.minecraft.client.MinecraftClient;
 public class CodeCommand {
 
     private static final String DEFAULT_URL = "https://vscode.dev";
+    private static final String REPO_URL = "https://vscode.dev/github/Cheggin/minecraft-use";
     private static final String SERVER_URL = "http://localhost:8080";
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
@@ -20,6 +21,12 @@ public class CodeCommand {
                     openScreen(DEFAULT_URL);
                     return 1;
                 })
+                .then(ClientCommandManager.literal("repo")
+                    .executes(context -> {
+                        com.minecraftuse.MinecraftUseMod.LOGGER.info("[CodeCommand] /code repo invoked");
+                        openScreen(REPO_URL);
+                        return 1;
+                    }))
                 .then(ClientCommandManager.literal("server")
                     .executes(context -> {
                         com.minecraftuse.MinecraftUseMod.LOGGER.info("[CodeCommand] /code server invoked");
