@@ -1,0 +1,33 @@
+# Build artifacts
+fabric-mod/build/
+fabric-mod/run/
+fabric-mod/.gradle/
+
+# Python
+sidecar/venv/
+sidecar/__pycache__/
+sidecar/schema_cache/*.schem
+sidecar/schema_cache/*.schematic
+sidecar/schema_cache/*.json
+sidecar/tests/__pycache__/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+
+# Environment
+.env
+
+# Dev files
+.omc/
+.ui-loop/
+.claude/
+reagan_*.md
+frontend/.agents/
+frontend/.claude/
+frontend/node_modules/
+frontend/convex/_generated/
