@@ -16,20 +16,26 @@ public class CodeCommand {
         dispatcher.register(
             ClientCommandManager.literal("code")
                 .executes(context -> {
+                    com.minecraftuse.MinecraftUseMod.LOGGER.info("[CodeCommand] /code invoked");
                     openScreen(DEFAULT_URL);
                     return 1;
                 })
                 .then(ClientCommandManager.literal("server")
                     .executes(context -> {
+                        com.minecraftuse.MinecraftUseMod.LOGGER.info("[CodeCommand] /code server invoked");
                         openScreen(SERVER_URL);
                         return 1;
                     }))
                 .then(ClientCommandManager.literal("close")
                     .executes(context -> {
+                        com.minecraftuse.MinecraftUseMod.LOGGER.info("[CodeCommand] /code close invoked");
                         MinecraftClient.getInstance().execute(() -> {
                             MinecraftClient mc = MinecraftClient.getInstance();
                             if (mc.currentScreen instanceof CodeScreenGUI) {
+                                com.minecraftuse.MinecraftUseMod.LOGGER.info("[CodeCommand] Closing active CodeScreenGUI");
                                 mc.currentScreen.close();
+                            } else {
+                                com.minecraftuse.MinecraftUseMod.LOGGER.info("[CodeCommand] No CodeScreenGUI active; close ignored");
                             }
                         });
                         return 1;
@@ -37,15 +43,36 @@ public class CodeCommand {
                 .then(ClientCommandManager.argument("url", StringArgumentType.greedyString())
                     .executes(context -> {
                         String url = StringArgumentType.getString(context, "url");
+                        com.minecraftuse.MinecraftUseMod.LOGGER.info("[CodeCommand] /code <url> invoked with {}", url);
                         openScreen(url);
                         return 1;
                     }))
         );
     }
 
+    private static String pendingUrl = null;
+    private static int pendingTicks = 0;
+
+    /** Call from ClientTickEvents to handle delayed screen opening */
+    public static void tick(MinecraftClient client) {
+        if (pendingUrl != null && pendingTicks > 0) {
+            pendingTicks--;
+            com.minecraftuse.MinecraftUseMod.LOGGER.info(
+                "[CodeCommand] Pending screen countdown for {} now at {} ticks",
+                pendingUrl,
+                pendingTicks
+            );
+            if (pendingTicks == 0) {
+                com.minecraftuse.MinecraftUseMod.LOGGER.info("[CodeCommand] Opening screen after delay: {}", pendingUrl);
+                client.setScreen(new CodeScreenGUI(pendingUrl));
+                pendingUrl = null;
+            }
+        }
+    }
+
     private static void openScreen(String url) {
-        MinecraftClient.getInstance().execute(() ->
-            MinecraftClient.getInstance().setScreen(new CodeScreenGUI(url))
-        );
+        com.minecraftuse.MinecraftUseMod.LOGGER.info("[CodeCommand] Scheduling screen open for URL: {}", url);
+        pendingUrl = url;
+        pendingTicks = 3;
     }
 }

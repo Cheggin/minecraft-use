@@ -76,6 +76,7 @@ public class MinecraftUseMod implements ClientModInitializer {
                 }
             }
             VillagerRegistry.getInstance().tickAll();
+            CodeCommand.tick(client);
         });
 
         LOGGER.info("Minecraft Use mod initialized — commands and keybinds registered");
