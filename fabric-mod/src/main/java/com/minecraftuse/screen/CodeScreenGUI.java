@@ -4,6 +4,7 @@ import com.cinemamod.mcef.MCEF;
 import com.cinemamod.mcef.MCEFBrowser;
 import com.cinemamod.mcef.MCEFRenderer;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.minecraftuse.MinecraftUseMod;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -16,18 +17,34 @@ import net.minecraft.client.render.VertexFormats;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.Locale;
+
 public class CodeScreenGUI extends Screen {
 
     private static final String DEFAULT_URL = "https://vscode.dev";
-    private static final String SERVER_URL = "http://localhost:8080";
     private static final int URL_BAR_HEIGHT = 20;
     private static final int URL_BAR_PADDING = 4;
+    private static final int PANEL_BORDER = 2;
+    private static final int PANEL_MIN_WIDTH = 640;
+    private static final int PANEL_MIN_HEIGHT = 360;
+    private static final double PANEL_WIDTH_RATIO = 0.84;
+    private static final double PANEL_HEIGHT_RATIO = 0.78;
+    private static final double ZOOM_STEP = 0.5D;
+    private static final double MIN_ZOOM_LEVEL = -4.0D;
+    private static final double MAX_ZOOM_LEVEL = 4.0D;
+    private static final int BACKDROP_COLOR = 0xA0000000;
+    private static final int PANEL_BG_COLOR = 0xFF101010;
+    private static final int PANEL_BORDER_COLOR = 0xFF5A5A5A;
     private static final int URL_BAR_BG_COLOR = 0xCC1E1E1E;
     private static final int URL_BAR_TEXT_COLOR = 0xFFCCCCCC;
     private static final int URL_BAR_LABEL_COLOR = 0xFF888888;
+    private static final String CLOSE_HINT = "ESC closes";
+    private static final String ZOOM_HINT = "Cmd/Ctrl +/- zoom";
 
     private MCEFBrowser browser;
     private final String url;
+    private BrowserLayout browserLayout = BrowserLayout.empty();
+    private int renderCount = 0;
 
     public CodeScreenGUI(String url) {
         super(Text.literal("Code Screen"));
@@ -41,6 +58,7 @@ public class CodeScreenGUI extends Screen {
     @Override
     protected void init() {
         super.init();
+        MinecraftUseMod.LOGGER.info("[CodeScreen] init() called, URL={}, MCEF.isInitialized={}", url, MCEF.isInitialized());
         if (!MCEF.isInitialized()) {
             MinecraftClient.getInstance().execute(() -> {
                 if (client != null && client.player != null) {
@@ -55,18 +73,41 @@ public class CodeScreenGUI extends Screen {
         }
 
         if (browser == null) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Creating MCEF browser for: {}", url);
             browser = MCEF.createBrowser(url, false);
+            // Disable cursor change listener to avoid GL cursor errors on macOS
+            browser.setCursorChangeListener(cursor -> {});
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Browser created: {}", browser != null);
         }
         resizeBrowser();
+        MinecraftUseMod.LOGGER.info("[CodeScreen] Screen initialized with panel {}", browserLayout);
     }
 
     private void resizeBrowser() {
-        if (browser == null) return;
+        browserLayout = computeBrowserLayout(width, height);
+        if (browser == null) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Computed panel layout without browser: {}", browserLayout);
+            return;
+        }
         double scale = MinecraftClient.getInstance().getWindow().getScaleFactor();
-        int browserWidth = (int) (width * scale);
-        int browserHeight = (int) ((height - URL_BAR_HEIGHT) * scale);
+        int browserWidth = (int) Math.round(browserLayout.browserWidth() * scale);
+        int browserHeight = (int) Math.round(browserLayout.browserHeight() * scale);
         if (browserWidth > 0 && browserHeight > 0) {
             browser.resize(browserWidth, browserHeight);
+            MinecraftUseMod.LOGGER.info(
+                "[CodeScreen] Resized browser to {}x{} px at scale {} using panel {}",
+                browserWidth,
+                browserHeight,
+                scale,
+                browserLayout
+            );
+        } else {
+            MinecraftUseMod.LOGGER.warn(
+                "[CodeScreen] Skipped browser resize because computed size was {}x{} for panel {}",
+                browserWidth,
+                browserHeight,
+                browserLayout
+            );
         }
     }
 
@@ -78,8 +119,34 @@ public class CodeScreenGUI extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        context.fill(0, 0, width, height, BACKDROP_COLOR);
+        context.fill(
+            browserLayout.panelLeft() - PANEL_BORDER,
+            browserLayout.panelTop() - PANEL_BORDER,
+            browserLayout.panelRight() + PANEL_BORDER,
+            browserLayout.panelBottom() + PANEL_BORDER,
+            PANEL_BORDER_COLOR
+        );
+        context.fill(
+            browserLayout.panelLeft(),
+            browserLayout.panelTop(),
+            browserLayout.panelRight(),
+            browserLayout.panelBottom(),
+            PANEL_BG_COLOR
+        );
+
         if (browser != null) {
             MCEFRenderer renderer = browser.getRenderer();
+            if (renderCount < 5 || renderCount % 100 == 0) {
+                MinecraftUseMod.LOGGER.info(
+                    "[CodeScreen] render #{}: textureID={}, browserURL={}, panel={}",
+                    renderCount,
+                    renderer.getTextureID(),
+                    browser.getURL(),
+                    browserLayout
+                );
+            }
+            renderCount++;
             RenderSystem.disableDepthTest();
             RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
             RenderSystem.setShaderTexture(0, renderer.getTextureID());
@@ -87,10 +154,10 @@ public class CodeScreenGUI extends Screen {
             Tessellator tessellator = Tessellator.getInstance();
             BufferBuilder buf = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
 
-            float x0 = 0;
-            float y0 = URL_BAR_HEIGHT;
-            float x1 = width;
-            float y1 = height;
+            float x0 = browserLayout.browserLeft();
+            float y0 = browserLayout.browserTop();
+            float x1 = browserLayout.browserRight();
+            float y1 = browserLayout.browserBottom();
 
             buf.vertex(x0, y1, 0).texture(0, 1).color(255, 255, 255, 255);
             buf.vertex(x1, y1, 0).texture(1, 1).color(255, 255, 255, 255);
@@ -104,40 +171,151 @@ public class CodeScreenGUI extends Screen {
         }
 
         // URL bar overlay
-        context.fill(0, 0, width, URL_BAR_HEIGHT, URL_BAR_BG_COLOR);
-        String label = "§7" + url;
-        int labelWidth = textRenderer.getWidth(label);
-        context.drawText(textRenderer, Text.literal(url), (width - labelWidth) / 2, URL_BAR_PADDING, URL_BAR_TEXT_COLOR, false);
-        context.drawText(textRenderer, Text.literal("ESC to close"), URL_BAR_PADDING, URL_BAR_PADDING, URL_BAR_LABEL_COLOR, false);
+        context.fill(
+            browserLayout.panelLeft(),
+            browserLayout.panelTop(),
+            browserLayout.panelRight(),
+            browserLayout.browserTop(),
+            URL_BAR_BG_COLOR
+        );
+        int urlY = browserLayout.panelTop() + URL_BAR_PADDING;
+        int urlX = browserLayout.panelLeft() + URL_BAR_PADDING;
+        int zoomHintWidth = textRenderer.getWidth(ZOOM_HINT);
+        String zoomLabel = String.format(Locale.ROOT, "%.1fx", zoomFactorForDisplay(currentZoomLevel()));
+        int zoomLabelWidth = textRenderer.getWidth(zoomLabel);
+        context.drawText(textRenderer, Text.literal(CLOSE_HINT), urlX, urlY, URL_BAR_LABEL_COLOR, false);
+        context.drawText(
+            textRenderer,
+            Text.literal(url),
+            browserLayout.panelLeft() + Math.max(8, (browserLayout.panelWidth() - textRenderer.getWidth(url)) / 2),
+            urlY,
+            URL_BAR_TEXT_COLOR,
+            false
+        );
+        context.drawText(
+            textRenderer,
+            Text.literal(ZOOM_HINT),
+            browserLayout.panelRight() - zoomHintWidth - zoomLabelWidth - (URL_BAR_PADDING * 3),
+            urlY,
+            URL_BAR_LABEL_COLOR,
+            false
+        );
+        context.drawText(
+            textRenderer,
+            Text.literal(zoomLabel),
+            browserLayout.panelRight() - zoomLabelWidth - URL_BAR_PADDING,
+            urlY,
+            URL_BAR_TEXT_COLOR,
+            false
+        );
     }
 
     @Override
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
-        // Don't render the default background — the browser fills the screen
+        // Don't render the default background — the inset panel handles its own backdrop.
     }
 
     private int scaledMouseX(double mouseX) {
         double scale = MinecraftClient.getInstance().getWindow().getScaleFactor();
-        return (int) (mouseX * scale);
+        return (int) Math.round((mouseX - browserLayout.browserLeft()) * scale);
     }
 
     private int scaledMouseY(double mouseY) {
         double scale = MinecraftClient.getInstance().getWindow().getScaleFactor();
-        return (int) ((mouseY - URL_BAR_HEIGHT) * scale);
+        return (int) Math.round((mouseY - browserLayout.browserTop()) * scale);
+    }
+
+    private boolean isInsideBrowser(double mouseX, double mouseY) {
+        return browserLayout.contains(mouseX, mouseY);
+    }
+
+    private double currentZoomLevel() {
+        if (browser == null) {
+            return 0.0D;
+        }
+        return browser.getZoomLevel();
+    }
+
+    private void adjustZoom(double delta) {
+        if (browser == null) {
+            MinecraftUseMod.LOGGER.warn("[CodeScreen] Ignored zoom delta {} because browser is null", delta);
+            return;
+        }
+        double previous = currentZoomLevel();
+        double next = clampZoomLevel(previous + delta);
+        if (Double.compare(previous, next) == 0) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom unchanged at {} after delta {}", previous, delta);
+            return;
+        }
+        browser.setZoomLevel(next);
+        MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom changed from {} to {} (delta {})", previous, next, delta);
+    }
+
+    static BrowserLayout computeBrowserLayout(int screenWidth, int screenHeight) {
+        int panelWidth = Math.max(PANEL_MIN_WIDTH, (int) Math.round(screenWidth * PANEL_WIDTH_RATIO));
+        int panelHeight = Math.max(PANEL_MIN_HEIGHT + URL_BAR_HEIGHT, (int) Math.round(screenHeight * PANEL_HEIGHT_RATIO));
+        panelWidth = Math.min(panelWidth, Math.max(PANEL_MIN_WIDTH, screenWidth - 32));
+        panelHeight = Math.min(panelHeight, Math.max(PANEL_MIN_HEIGHT + URL_BAR_HEIGHT, screenHeight - 32));
+        int panelLeft = Math.max(16, (screenWidth - panelWidth) / 2);
+        int panelTop = Math.max(16, (screenHeight - panelHeight) / 2);
+        int panelRight = Math.min(screenWidth - 16, panelLeft + panelWidth);
+        int panelBottom = Math.min(screenHeight - 16, panelTop + panelHeight);
+        panelWidth = panelRight - panelLeft;
+        panelHeight = panelBottom - panelTop;
+        return new BrowserLayout(
+            panelLeft,
+            panelTop,
+            panelWidth,
+            panelHeight,
+            panelLeft,
+            panelTop + URL_BAR_HEIGHT,
+            panelWidth,
+            panelHeight - URL_BAR_HEIGHT
+        );
+    }
+
+    static boolean isZoomInShortcut(int keyCode, int modifiers) {
+        return hasZoomModifier(modifiers)
+            && (keyCode == GLFW.GLFW_KEY_EQUAL || keyCode == GLFW.GLFW_KEY_KP_ADD);
+    }
+
+    static boolean isZoomOutShortcut(int keyCode, int modifiers) {
+        return hasZoomModifier(modifiers)
+            && (keyCode == GLFW.GLFW_KEY_MINUS || keyCode == GLFW.GLFW_KEY_KP_SUBTRACT);
+    }
+
+    static boolean isResetZoomShortcut(int keyCode, int modifiers) {
+        return hasZoomModifier(modifiers) && keyCode == GLFW.GLFW_KEY_0;
+    }
+
+    static boolean hasZoomModifier(int modifiers) {
+        return (modifiers & GLFW.GLFW_MOD_SUPER) != 0 || (modifiers & GLFW.GLFW_MOD_CONTROL) != 0;
+    }
+
+    static double clampZoomLevel(double zoomLevel) {
+        return Math.max(MIN_ZOOM_LEVEL, Math.min(MAX_ZOOM_LEVEL, zoomLevel));
+    }
+
+    static double zoomFactorForDisplay(double zoomLevel) {
+        return Math.pow(1.2D, zoomLevel);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (browser != null && mouseY > URL_BAR_HEIGHT) {
+        if (browser != null && isInsideBrowser(mouseX, mouseY)) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] mouseClicked x={}, y={}, button={}", mouseX, mouseY, button);
             browser.sendMousePress(scaledMouseX(mouseX), scaledMouseY(mouseY), button);
             browser.setFocus(true);
+        } else {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] mouseClicked outside browser x={}, y={}, button={}", mouseX, mouseY, button);
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (browser != null && mouseY > URL_BAR_HEIGHT) {
+        if (browser != null && isInsideBrowser(mouseX, mouseY)) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] mouseReleased x={}, y={}, button={}", mouseX, mouseY, button);
             browser.sendMouseRelease(scaledMouseX(mouseX), scaledMouseY(mouseY), button);
         }
         return super.mouseReleased(mouseX, mouseY, button);
@@ -145,7 +323,7 @@ public class CodeScreenGUI extends Screen {
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        if (browser != null) {
+        if (browser != null && isInsideBrowser(mouseX, mouseY)) {
             browser.sendMouseMove(scaledMouseX(mouseX), scaledMouseY(mouseY));
         }
         super.mouseMoved(mouseX, mouseY);
@@ -153,7 +331,14 @@ public class CodeScreenGUI extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (browser != null && mouseY > URL_BAR_HEIGHT) {
+        if (browser != null && isInsideBrowser(mouseX, mouseY)) {
+            MinecraftUseMod.LOGGER.info(
+                "[CodeScreen] mouseScrolled x={}, y={}, horizontal={}, vertical={}",
+                mouseX,
+                mouseY,
+                horizontalAmount,
+                verticalAmount
+            );
             browser.sendMouseWheel(scaledMouseX(mouseX), scaledMouseY(mouseY), verticalAmount, 0);
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
@@ -163,10 +348,30 @@ public class CodeScreenGUI extends Screen {
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         // Escape closes the screen — do not forward to browser
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] ESC pressed; closing screen for URL {}", url);
             close();
             return true;
         }
+        if (isZoomInShortcut(keyCode, modifiers)) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom-in shortcut pressed: keyCode={}, modifiers={}", keyCode, modifiers);
+            adjustZoom(ZOOM_STEP);
+            return true;
+        }
+        if (isZoomOutShortcut(keyCode, modifiers)) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom-out shortcut pressed: keyCode={}, modifiers={}", keyCode, modifiers);
+            adjustZoom(-ZOOM_STEP);
+            return true;
+        }
+        if (isResetZoomShortcut(keyCode, modifiers)) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom reset shortcut pressed: keyCode={}, modifiers={}", keyCode, modifiers);
+            if (browser != null) {
+                browser.setZoomLevel(0.0D);
+                MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom reset to default");
+            }
+            return true;
+        }
         if (browser != null) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Forwarding keyPressed keyCode={}, scanCode={}, modifiers={}", keyCode, scanCode, modifiers);
             browser.sendKeyPress(keyCode, scanCode, modifiers);
             browser.setFocus(true);
         }
@@ -176,6 +381,7 @@ public class CodeScreenGUI extends Screen {
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
         if (browser != null && keyCode != GLFW.GLFW_KEY_ESCAPE) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Forwarding keyReleased keyCode={}, scanCode={}, modifiers={}", keyCode, scanCode, modifiers);
             browser.sendKeyRelease(keyCode, scanCode, modifiers);
         }
         return super.keyReleased(keyCode, scanCode, modifiers);
@@ -185,6 +391,7 @@ public class CodeScreenGUI extends Screen {
     public boolean charTyped(char chr, int modifiers) {
         if (chr == 0) return false;
         if (browser != null) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Forwarding charTyped char='{}' ({}) modifiers={}", chr, (int) chr, modifiers);
             browser.sendKeyTyped(chr, modifiers);
             browser.setFocus(true);
         }
@@ -193,7 +400,9 @@ public class CodeScreenGUI extends Screen {
 
     @Override
     public void removed() {
+        MinecraftUseMod.LOGGER.info("[CodeScreen] removed() called for URL {} with final zoom {}", url, currentZoomLevel());
         if (browser != null) {
+            MinecraftUseMod.LOGGER.info("[CodeScreen] Closing browser instance");
             browser.close();
             browser = null;
         }
@@ -203,5 +412,40 @@ public class CodeScreenGUI extends Screen {
     @Override
     public boolean shouldPause() {
         return false;
+    }
+
+    static record BrowserLayout(
+        int panelLeft,
+        int panelTop,
+        int panelWidth,
+        int panelHeight,
+        int browserLeft,
+        int browserTop,
+        int browserWidth,
+        int browserHeight
+    ) {
+        static BrowserLayout empty() {
+            return new BrowserLayout(0, 0, 0, 0, 0, URL_BAR_HEIGHT, 0, 0);
+        }
+
+        int panelRight() {
+            return panelLeft + panelWidth;
+        }
+
+        int panelBottom() {
+            return panelTop + panelHeight;
+        }
+
+        int browserRight() {
+            return browserLeft + browserWidth;
+        }
+
+        int browserBottom() {
+            return browserTop + browserHeight;
+        }
+
+        boolean contains(double x, double y) {
+            return x >= browserLeft && x <= browserRight() && y >= browserTop && y <= browserBottom();
+        }
     }
 }
