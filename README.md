@@ -1,5 +1,7 @@
 # minecraft-use
 
+[![npm](https://img.shields.io/npm/v/minecraft-use)](https://www.npmjs.com/package/minecraft-use)
+
 Turn Minecraft into a terminal interface for AI agents. Spawn Claude Code, Browser Use, or any CLI tool as Minecraft villagers that follow you around, display output above their heads, and respond to your messages.
 
 ```
