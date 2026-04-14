@@ -1,64 +1,190 @@
-# Minecraft-Use
+# minecraft-use
 
-Claude Code, inside Minecraft.
+Turn Minecraft into a terminal interface for AI agents. Spawn Claude Code, Browser Use, or any CLI tool as Minecraft villagers that follow you around, display output above their heads, and respond to your messages.
 
-Spawn a villager, talk to it in chat, and it runs Claude Code for you — browsing the web, finding schematics, and placing builds in your world.
+```
+/agent alex              → spawn Claude villager
+/agent rex wolf          → spawn wolf agent
+/claude hello            → talk to Claude Code
+/browser-use get-schematics castle → download builds
+/build 27283             → place schematic via Litematica
+/agent-tell alex shawn "review this" → agents talk to each other
+```
 
-## Features
+## Quick Start
 
-- **In-game Claude Code** — chat with a villager that runs Claude via tmux + Browser Use
-- **Schematic search** — villager finds and downloads .schem files from the web
-- **Auto-build** — place schematics with Litematica
-- **Web catalog** — Minecraft-styled frontend for browsing saved schematics (Convex DB)
+```bash
+# Install
+npm install -g minecraft-use
+
+# Check prerequisites
+minecraft-use doctor
+
+# Set up everything (venv, mod build, dependencies)
+minecraft-use init
+
+# Launch (tmux + sidecar + Claude Code + Minecraft)
+minecraft-use start
+```
+
+## How It Works
+
+The mod connects to tmux terminal panes via [smux/tmux-bridge](https://github.com/ShawnPana/smux). Each command you type in Minecraft sends text to a named tmux pane and reads the output back. The mod doesn't know or care what's running in each pane.
+
+```
+Minecraft Chat  →  TmuxBridge.java  →  tmux-bridge CLI  →  tmux pane
+     ↓                                                         ↓
+  /claude hello     types "hello" into        Claude Code responds
+     ↓              the "claude" pane              ↓
+  Shows response    reads output back         "Hello! How can I help?"
+  in Minecraft chat
+```
 
 ## Architecture
 
 ```
-fabric-mod/          Fabric 1.21.1 mod (Java 21)
-  commands/          /spawn, /build, /claude, /catalog, /shell, etc.
-  villager/          AI villager with floating text + chat GUI
-  bridge/            tmux bridge to sidecar
+tmux session "minecraft-use"
+┌──────────────┬──────────────┐
+│  sidecar     │  claude      │
+│  (FastAPI)   │  (lfg)       │
+├──────────────┼──────────────┤
+│  minecraft   │  browser     │
+│  (gradlew)   │  (repl)      │
+├──────────────┤              │
+│  shell       │              │
+│  (bash)      │              │
+└──────────────┴──────────────┘
 
-sidecar/             Python (FastAPI + Browser Use)
-  server.py          localhost:8765
-  browser_repl.py    Browser Use REPL
-
-frontend/            Vite + React + Convex
-  src/               Minecraft-styled UI
-  convex/            Schematic storage + search
-```
-
-## Getting Started
-
-```bash
-# Mod
-cd fabric-mod && ./gradlew runClient
-
-# Sidecar
-cd sidecar && source venv/bin/activate && python server.py
-
-# Frontend
-cd frontend && npm install && npm run dev
++ "agents" window (created by /agent command)
+┌──────────────┬──────────────┐
+│  alex        │  shawn       │
+│  (lfg)       │  (lfg)       │
+└──────────────┴──────────────┘
 ```
 
 ## Commands
 
-| Command | What it does |
+### Terminal Commands
+| Command | Description |
 |---------|-------------|
-| `/spawn` | Spawn a Claude villager |
-| `/despawn` | Remove it |
-| `/claude <msg>` | Send a message to Claude |
-| `/build <name>` | Place a schematic |
-| `/catalog` | Open schematic browser |
-| `/download <url>` | Download a .schem file |
-| `/list` | List saved schematics |
-| `/undo` | Undo last placement |
-| `/shell <cmd>` | Run a shell command |
+| `/claude <message>` | Send a message to Claude Code |
+| `/browser-use <task>` | Run a Browser Use task |
+| `/browser-use get-schematics <query>` | Search and download schematics |
+| `/shell <command>` | Run a shell command |
+| `/tmux-send <pane> <text>` | Send text to any tmux pane |
+| `/tmux-read <pane>` | Read from any tmux pane |
 
-## Stack
+### Agent Villagers
+| Command | Description |
+|---------|-------------|
+| `/agent <name>` | Spawn a villager agent (runs Claude Code) |
+| `/agent <name> <mob>` | Spawn as specific mob (wolf, pig, creeper...) |
+| `/agent <name> --attach <pane>` | Attach villager to existing tmux pane |
+| `/despawn <name>` | Remove agent and close its tmux pane |
+| `/agent-tell <from> <to> <msg>` | One agent sends a message to another |
+| `/agent-chat <a1> <a2> <prompt>` | Multi-round conversation between agents |
 
-Fabric 1.21.1 / Java 21 / Python 3.12 / FastAPI / Browser Use / Playwright / Vite / React 19 / Tailwind v4 / Convex / Litematica
+### Schematics
+| Command | Description |
+|---------|-------------|
+| `/build list` | List schematics from Convex database |
+| `/build <name>` | Download schematic for Litematica placement |
+| `/catalog` | Open in-game schematic catalog GUI |
+
+## Agent Villagers
+
+Spawn AI agents as Minecraft mobs that follow you around:
+
+```
+/agent alex              → librarian villager named "alex"
+/agent rex wolf          → wolf named "rex"
+/agent scout creeper     → creeper named "scout"
+```
+
+Each agent:
+- **Follows you** (3-6 block distance, teleports if >16 blocks away)
+- **Shows output** as floating text above its head (with ANSI color rendering)
+- **Right-click** to open a scrollable chat GUI
+- **Dies** -> tmux pane closes + custom death sound
+- **Custom spawn sounds** per name (alex, shawn, magnus, aitor, etc.)
+
+Agents can talk to each other:
+```
+/agent-tell alex shawn "tell shawn to review the code"
+/agent-chat alex shawn "debate rust vs python"
+```
+
+## Schematics Pipeline
+
+Download schematics from the web and place them in Minecraft:
+
+```
+/browser-use get-schematics castle     → Browser Use finds and downloads
+                                       → Saves to Convex database
+/build list                            → Shows available schematics
+/build castle                          → Downloads from Convex
+                                       → Load in Litematica (M+C) to place
+```
+
+Supports:
+- minecraft-schematics.com (default, skips non-free)
+- planetminecraft.com (`get-schematics castle --site planet`)
+
+## Prerequisites
+
+| Tool | Version | Install |
+|------|---------|---------|
+| Java | 21+ | `brew install openjdk@21` |
+| tmux | 3.x+ | `brew install tmux` |
+| Python | 3.12+ | `brew install python@3.12` |
+| Node.js | 18+ | `brew install node` |
+| smux | latest | auto-installed by `minecraft-use init` |
+
+Run `minecraft-use doctor` to check everything.
+
+## Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+BROWSER_USE_API_KEY=bu_your_key_here
+OPENAI_API_KEY=sk_your_key_here
+```
+
+## CLI
+
+```bash
+minecraft-use doctor    # Check prerequisites
+minecraft-use init      # Set up everything
+minecraft-use start     # Launch tmux environment + Minecraft
+minecraft-use stop      # Kill tmux session
+```
+
+## Development
+
+```bash
+task build          # Build the Fabric mod
+task test           # Run all tests (Java + Python)
+task test:python    # Python tests only (50 tests)
+task lint           # Run ruff linter
+task mc:install     # Copy mod JAR to mods folder
+task up             # Start tmux dev environment
+task down           # Kill tmux session
+```
+
+## Tech Stack
+
+- **Minecraft Mod**: Fabric 1.21.1, Java 21, Fabric API 0.107.0
+- **Terminal Bridge**: smux/tmux-bridge
+- **Sidecar**: Python 3.12, FastAPI, Browser Use Cloud SDK
+- **Database**: Convex (schematic storage)
+- **Schematic Placement**: Litematica
+- **Frontend**: React 19, Vite, Convex
+
+## Supported Mob Types
+
+villager, wolf, cat, pig, cow, sheep, chicken, fox, parrot, rabbit, horse, donkey, llama, goat, bee, axolotl, frog, camel, sniffer, allay, iron_golem, snow_golem, zombie, skeleton, creeper, enderman
 
 ## License
 
-GPL v3 — see [LICENSE](LICENSE).
+MIT

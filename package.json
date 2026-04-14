@@ -1,0 +1,35 @@
+{
+  "name": "minecraft-use",
+  "version": "0.1.0",
+  "description": "Control Minecraft with AI agents — Claude Code, Browser Use, and more via tmux-bridge",
+  "keywords": [
+    "minecraft",
+    "fabric",
+    "claude",
+    "ai",
+    "tmux",
+    "browser-use",
+    "llm",
+    "agent"
+  ],
+  "homepage": "https://github.com/Cheggin/minecraft-use",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Cheggin/minecraft-use.git"
+  },
+  "license": "MIT",
+  "bin": {
+    "minecraft-use": "./bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "fabric-mod/",
+    "sidecar/",
+    "Taskfile.yml",
+    "run.sh"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
