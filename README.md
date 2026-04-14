@@ -91,7 +91,6 @@ tmux session "minecraft-code"
 |---------|-------------|
 | `/build list` | List schematics from Convex database |
 | `/build <name>` | Download schematic for Litematica placement |
-| `/catalog` | Open in-game schematic catalog GUI |
 
 ## Agent Villagers
 

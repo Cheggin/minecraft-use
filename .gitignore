@@ -31,3 +31,4 @@ sidecar/schema_cache/*.nbt
 fabric-mod/run/
 .omc/
 __pycache__/
+.omx/
