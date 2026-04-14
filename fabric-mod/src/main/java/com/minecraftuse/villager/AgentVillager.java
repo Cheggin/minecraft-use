@@ -4,14 +4,9 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.goal.GoalSelector;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.registry.Registries;
-import com.minecraftuse.ModSounds;
+import com.minecraftuse.ProfileSoundManager;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.village.VillagerData;
 import net.minecraft.village.VillagerProfession;
@@ -95,16 +90,8 @@ public class AgentVillager {
 
         world.spawnEntity(mob);
 
-        // Play name-specific spawn sound, or default XP orb
-        SoundEvent spawnSound = ModSounds.getSpawnSound(name);
-        if (spawnSound != null) {
-            world.playSound(null, mob.getBlockPos(),
-                spawnSound, SoundCategory.NEUTRAL, 5.0f, 1.0f);
-        } else {
-            world.playSound(null, mob.getBlockPos(),
-                SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP,
-                SoundCategory.NEUTRAL, 1.0f, 1.0f);
-        }
+        // Play name-specific spawn sound from profile, or default XP orb
+        ProfileSoundManager.playSpawnSound(name, world, mob.getBlockPos());
 
         return new AgentVillager(mob, name);
     }

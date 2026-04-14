@@ -16,6 +16,7 @@ import com.minecraftuse.commands.TmuxReadCommand;
 import com.minecraftuse.commands.TmuxSendCommand;
 import com.minecraftuse.commands.UndoCommand;
 import com.minecraftuse.gui.CatalogScreen;
+import com.minecraftuse.ProfileSoundManager;
 import com.minecraftuse.network.SidecarClient;
 import com.minecraftuse.villager.VillagerInteractionHandler;
 import com.minecraftuse.villager.VillagerRegistry;
@@ -41,6 +42,7 @@ public class MinecraftUseMod implements ClientModInitializer {
     public void onInitializeClient() {
         LOGGER.info("Minecraft Use mod initializing...");
         ModSounds.register();
+        ProfileSoundManager.init();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             AgentChatCommand.register(dispatcher);
