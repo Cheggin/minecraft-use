@@ -78,68 +78,13 @@ public class ListenCommand {
                 String paneLabelToUse;
 
                 if (existingPaneId != null) {
-                    // Process is already in a tmux pane — attach to it
+                    // Process is already in a tmux pane — attach to it directly
                     runProcess(List.of(TMUX_BRIDGE_PATH, "name", existingPaneId, name));
                     paneLabelToUse = name;
-                    sendFeedbackOnMain(source, "§e[MCUse] §7Found process in tmux pane " + existingPaneId + ", attaching...");
+                    sendFeedbackOnMain(source, "§e[MCUse] §7Found process in tmux pane, attaching...");
                 } else {
-                    // Process is NOT in tmux — create a new pane
+                    // Process is NOT in tmux — create a pane with `ports logs <port> -f`
                     paneLabelToUse = name;
-
-                    // Try to find a log file for this process
-                    // 1. Check the process's working directory
-                    // 2. Search common project locations relative to the user's home
-                    String logFile = null;
-                    try {
-                        String cwdOutput = runProcess(List.of("lsof", "-p", primaryPid, "-d", "cwd", "-Fn")).trim();
-                        for (String line : cwdOutput.split("\n")) {
-                            if (line.startsWith("n") && line.length() > 1) {
-                                String dir = line.substring(1);
-                                // Check the cwd itself and a frontend/ subdirectory
-                                for (String candidate : new String[]{
-                                    dir + "/.vite-requests.log",
-                                    dir + "/frontend/.vite-requests.log"
-                                }) {
-                                    if (new File(candidate).exists()) {
-                                        logFile = candidate;
-                                        break;
-                                    }
-                                }
-                                // Also walk up to find a project root with frontend/
-                                if (logFile == null) {
-                                    File current = new File(dir);
-                                    for (int depth = 0; depth < 5 && current != null; depth++) {
-                                        File check = new File(current, "frontend/.vite-requests.log");
-                                        if (check.exists()) {
-                                            logFile = check.getAbsolutePath();
-                                            break;
-                                        }
-                                        check = new File(current, ".vite-requests.log");
-                                        if (check.exists()) {
-                                            logFile = check.getAbsolutePath();
-                                            break;
-                                        }
-                                        current = current.getParentFile();
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    } catch (Exception ignored) {}
-
-                    // Last resort: check well-known location
-                    if (logFile == null) {
-                        String home = System.getProperty("user.home");
-                        String[] searchPaths = {
-                            home + "/Documents/GitHub/minecraft-use/frontend/.vite-requests.log"
-                        };
-                        for (String path : searchPaths) {
-                            if (new File(path).exists()) {
-                                logFile = path;
-                                break;
-                            }
-                        }
-                    }
 
                     String existingWindows = runProcess(List.of(
                         TMUX_PATH, "list-windows", "-t", TMUX_SESSION, "-F", "#{window_name}"
@@ -167,59 +112,41 @@ public class ListenCommand {
                     PaneConfig config2 = PaneConfig.load(new File("."));
                     TmuxBridge tmpBridge = new TmuxBridge(config2.getTmuxSocket());
 
-                    // Use log file if found, otherwise fall back to ports watch
-                    String command = logFile != null
-                        ? "tail -f " + logFile
-                        : "ports watch";
-                    tmpBridge.read(name).get();
-                    tmpBridge.type(name, command).get();
-                    tmpBridge.read(name).get();
-                    tmpBridge.keys(name, "Enter").get();
-
-                    if (logFile != null) {
-                        sendFeedbackOnMain(source, "§e[MCUse] §7Tailing log file: " + logFile);
-                    } else {
-                        sendFeedbackOnMain(source, "§e[MCUse] §7No log file found, using port-whisperer watch...");
-                    }
-                }
-
-                PaneConfig config = PaneConfig.load(new File("."));
-                TmuxBridge bridge = new TmuxBridge(config.getTmuxSocket());
-
-                // Determine if we have a log file for direct reading
-                final File directLogFile;
-                if (existingPaneId == null) {
-                    // In the "not in tmux" path, check if we found a log file
-                    String home = System.getProperty("user.home");
-                    File candidate = new File(home + "/Documents/GitHub/minecraft-use/frontend/.vite-requests.log");
-                    // Also try process cwd-based detection
-                    File foundLog = null;
+                    // Find a .vite-requests.log via the process's working directory
+                    String tailCommand = "ports logs " + port + " -f";
                     try {
                         String cwdOut = runProcess(List.of("lsof", "-p", primaryPid, "-d", "cwd", "-Fn")).trim();
                         for (String cwdLine : cwdOut.split("\n")) {
                             if (cwdLine.startsWith("n") && cwdLine.length() > 1) {
                                 String dir = cwdLine.substring(1);
-                                for (String p : new String[]{dir + "/.vite-requests.log", dir + "/frontend/.vite-requests.log"}) {
-                                    if (new File(p).exists()) { foundLog = new File(p); break; }
-                                }
-                                if (foundLog == null) {
-                                    File cur = new File(dir);
-                                    for (int d = 0; d < 5 && cur != null; d++) {
-                                        File c = new File(cur, "frontend/.vite-requests.log");
-                                        if (c.exists()) { foundLog = c; break; }
-                                        c = new File(cur, ".vite-requests.log");
-                                        if (c.exists()) { foundLog = c; break; }
-                                        cur = cur.getParentFile();
+                                // Check cwd, parent dirs, and frontend/ subdirs
+                                File cur = new File(dir);
+                                for (int d = 0; d < 5 && cur != null; d++) {
+                                    for (String rel : new String[]{".vite-requests.log", "frontend/.vite-requests.log"}) {
+                                        File f = new File(cur, rel);
+                                        if (f.exists()) {
+                                            tailCommand = "tail -f " + f.getAbsolutePath();
+                                            d = 999; // break outer
+                                            break;
+                                        }
                                     }
+                                    cur = cur.getParentFile();
                                 }
                                 break;
                             }
                         }
                     } catch (Exception ignored) {}
-                    directLogFile = foundLog != null ? foundLog : (candidate.exists() ? candidate : null);
-                } else {
-                    directLogFile = null; // Attached to tmux pane, read from there
+
+                    tmpBridge.read(name).get();
+                    tmpBridge.type(name, tailCommand).get();
+                    tmpBridge.read(name).get();
+                    tmpBridge.keys(name, "Enter").get();
+
+                    sendFeedbackOnMain(source, "§e[MCUse] §7Streaming: " + tailCommand);
                 }
+
+                PaneConfig config = PaneConfig.load(new File("."));
+                TmuxBridge bridge = new TmuxBridge(config.getTmuxSocket());
 
                 // Spawn the villager on the main thread
                 MinecraftClient client = MinecraftClient.getInstance();
@@ -250,9 +177,7 @@ public class ListenCommand {
                     AgentVillager agent = AgentVillager.spawn(serverWorld, spawnPos, name, MOB_TYPE);
                     agent.getEntity().setInvulnerable(false);
 
-                    LogOutputPoller poller = directLogFile != null
-                        ? new LogOutputPoller(bridge, finalPaneName, floatingText, directLogFile)
-                        : new LogOutputPoller(bridge, finalPaneName, floatingText);
+                    LogOutputPoller poller = new LogOutputPoller(bridge, finalPaneName, floatingText);
                     poller.start();
 
                     VillagerRegistry.AgentVillagerData data = new VillagerRegistry.AgentVillagerData(
@@ -264,9 +189,7 @@ public class ListenCommand {
                     );
                     registry.register(name, data);
 
-                    String mode = attachedToExisting ? "§aattached to tmux pane"
-                        : directLogFile != null ? "§areading log file directly"
-                        : "§7using ports watch";
+                    String mode = attachedToExisting ? "§aattached to tmux pane" : "§astreaming via port-whisperer";
                     source.sendFeedback(Text.literal(
                         "§e[MCUse] §aListening on port §f" + port
                         + " §7(" + displayName + " PID " + primaryPid + ")"
@@ -288,14 +211,12 @@ public class ListenCommand {
 
     /**
      * Find a tmux pane whose shell PID is an ancestor of the given PID.
-     * This detects when a process (e.g. Vite dev server) is running inside
-     * an existing tmux pane so we can attach to it directly.
+     * Detects when a process is running inside an existing tmux pane.
      *
      * @return the pane ID (e.g. %5) if found, null otherwise
      */
     private static String findTmuxPaneForPid(String targetPid) {
         try {
-            // Get all tmux pane PIDs and their IDs
             String paneList = runProcess(List.of(
                 TMUX_PATH, "list-panes", "-a", "-F", "#{pane_pid} #{pane_id}"
             ));
@@ -303,10 +224,9 @@ public class ListenCommand {
             if (paneList.isBlank()) return null;
 
             // Walk up the process tree from targetPid to find a matching pane PID
-            // Collect all ancestor PIDs first
             java.util.Set<String> ancestors = new java.util.HashSet<>();
             String currentPid = targetPid;
-            for (int i = 0; i < 20; i++) { // max depth to avoid infinite loop
+            for (int i = 0; i < 20; i++) {
                 ancestors.add(currentPid);
                 String ppid = runProcess(List.of("ps", "-o", "ppid=", "-p", currentPid)).trim();
                 if (ppid.isEmpty() || ppid.equals("0") || ppid.equals("1") || ppid.equals(currentPid)) {
@@ -315,15 +235,10 @@ public class ListenCommand {
                 currentPid = ppid;
             }
 
-            // Check each tmux pane to see if its PID is an ancestor of our target
             for (String line : paneList.split("\n")) {
                 String[] parts = line.trim().split("\\s+", 2);
-                if (parts.length == 2) {
-                    String panePid = parts[0];
-                    String paneId = parts[1];
-                    if (ancestors.contains(panePid)) {
-                        return paneId;
-                    }
+                if (parts.length == 2 && ancestors.contains(parts[0])) {
+                    return parts[1];
                 }
             }
         } catch (Exception ignored) {}
