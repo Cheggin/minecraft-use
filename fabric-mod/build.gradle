@@ -22,6 +22,9 @@ dependencies {
     // HTTP client for sidecar communication
     implementation "com.google.code.gson:gson:2.11.0"
 
+    // MCEF — Chromium Embedded Framework for in-game web rendering
+    modImplementation files("run/mods/mcef-fabric-2.1.6-1.21.1.jar")
+
     // JUnit 5
     testImplementation "org.junit.jupiter:junit-jupiter-api:5.11.0"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.11.0"

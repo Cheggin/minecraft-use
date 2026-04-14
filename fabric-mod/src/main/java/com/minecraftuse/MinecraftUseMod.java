@@ -3,6 +3,7 @@ package com.minecraftuse;
 import com.minecraftuse.commands.AgentChatCommand;
 import com.minecraftuse.commands.AgentTellCommand;
 import com.minecraftuse.commands.BrowserUseCommand;
+import com.minecraftuse.commands.CodeCommand;
 import com.minecraftuse.commands.BuildCommand;
 import com.minecraftuse.commands.CatalogCommand;
 import com.minecraftuse.commands.ClaudeCommand;
@@ -46,6 +47,7 @@ public class MinecraftUseMod implements ClientModInitializer {
             AgentChatCommand.register(dispatcher);
             AgentTellCommand.register(dispatcher);
             BrowserUseCommand.register(dispatcher);
+            CodeCommand.register(dispatcher);
             BuildCommand.register(dispatcher);
             CatalogCommand.register(dispatcher);
             ClaudeCommand.register(dispatcher);
