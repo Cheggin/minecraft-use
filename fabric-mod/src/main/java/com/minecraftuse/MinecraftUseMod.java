@@ -2,6 +2,7 @@ package com.minecraftuse;
 
 import com.minecraftuse.commands.AgentChatCommand;
 import com.minecraftuse.commands.AgentTellCommand;
+import com.minecraftuse.commands.AgentsCommand;
 import com.minecraftuse.commands.BrowserUseCommand;
 import com.minecraftuse.commands.CodeCommand;
 import com.minecraftuse.commands.BuildCommand;
@@ -47,6 +48,7 @@ public class MinecraftUseMod implements ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             AgentChatCommand.register(dispatcher);
             AgentTellCommand.register(dispatcher);
+            AgentsCommand.register(dispatcher);
             BrowserUseCommand.register(dispatcher);
             CodeCommand.register(dispatcher);
             BuildCommand.register(dispatcher);
@@ -79,6 +81,7 @@ public class MinecraftUseMod implements ClientModInitializer {
             }
             VillagerRegistry.getInstance().tickAll();
             CodeCommand.tick(client);
+            AgentsCommand.tick(client);
         });
 
         LOGGER.info("Minecraft Use mod initialized — commands and keybinds registered");
