@@ -49,6 +49,7 @@ public class VillagerRegistry {
             if (data.villager().isAlive()) {
                 data.villager().discard();
             }
+            killTmuxPane(data.paneName());
             killMonitoredPort(data);
         }
     }
@@ -95,38 +96,43 @@ public class VillagerRegistry {
         }
         // Clean up dead villagers
         for (String name : dead) {
-            AgentVillagerData data = byName.remove(name);
-            if (data != null) {
-                data.outputPoller().stop();
-                data.floatingText().remove();
-                // Kill the tmux pane — resolve label to pane ID first via tmux-bridge
-                try {
-                    String tmuxBridge = System.getProperty("user.home") + "/.smux/bin/tmux-bridge";
-                    ProcessBuilder resolvePb = new ProcessBuilder(tmuxBridge, "resolve", data.paneName());
-                    resolvePb.environment().put("PATH", "/opt/homebrew/bin:" + resolvePb.environment().getOrDefault("PATH", "/usr/bin:/bin"));
-                    resolvePb.redirectErrorStream(true);
-                    Process resolveProc = resolvePb.start();
-                    String paneId = new String(resolveProc.getInputStream().readAllBytes()).trim();
-                    resolveProc.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
-                    if (!paneId.isEmpty()) {
-                        ProcessBuilder killPb = new ProcessBuilder("/opt/homebrew/bin/tmux", "kill-pane", "-t", paneId);
-                        killPb.redirectErrorStream(true);
-                        killPb.start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
-                    }
-                } catch (Exception ignored) {}
-                // Kill monitored port process if this was a listen-villager
-                killMonitoredPort(data);
-                // Play death sound and show message
-                MinecraftClient client = MinecraftClient.getInstance();
-                if (client != null && client.player != null) {
-                    ProfileSoundManager.playDeathSound(name, client.player);
-                    client.player.sendMessage(
-                        Text.literal("§e[MCUse] §cDespawned agent: §f" + name + " §7(villager died)"),
-                        false
-                    );
-                }
+            unregister(name);
+            // Play death sound and show message
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client != null && client.player != null) {
+                ProfileSoundManager.playDeathSound(name, client.player);
+                client.player.sendMessage(
+                    Text.literal("§e[MCUse] §cDespawned agent: §f" + name + " §7(villager died)"),
+                    false
+                );
             }
         }
+    }
+
+    /** Kill the tmux pane associated with an agent (async to avoid blocking the game thread). */
+    private void killTmuxPane(String paneName) {
+        Thread killThread = new Thread(() -> {
+            try {
+                // Resolve label to pane ID via tmux-bridge, then kill
+                String tmuxBridge = System.getProperty("user.home") + "/.smux/bin/tmux-bridge";
+                ProcessBuilder resolvePb = new ProcessBuilder(tmuxBridge, "resolve", paneName);
+                resolvePb.environment().put("PATH", "/opt/homebrew/bin:" + resolvePb.environment().getOrDefault("PATH", "/usr/bin:/bin"));
+                resolvePb.redirectErrorStream(true);
+                Process resolveProc = resolvePb.start();
+                String paneId = new String(resolveProc.getInputStream().readAllBytes()).trim();
+                resolveProc.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+
+                String target = paneId.isEmpty() ? paneName : paneId;
+                ProcessBuilder killPb = new ProcessBuilder("/opt/homebrew/bin/tmux", "kill-pane", "-t", target);
+                killPb.redirectErrorStream(true);
+                Process killProc = killPb.start();
+                if (!killProc.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                    killProc.destroyForcibly();
+                }
+            } catch (Exception ignored) {}
+        }, "PaneKill-" + paneName);
+        killThread.setDaemon(true);
+        killThread.start();
     }
 
     /** Kill all processes on the monitored port, if this was a listen-villager. */
