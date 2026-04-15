@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Pixel-art terminal prompt: "> _" on a dark block -->
+  <!-- Background block — warm dark stone -->
+  <rect width="32" height="32" rx="2" fill="#2a1f16"/>
+  <rect x="1" y="1" width="30" height="30" rx="1" fill="#3d2e22"/>
+  <!-- Top bevel -->
+  <rect x="1" y="1" width="30" height="2" fill="#4e3d2f" opacity="0.6"/>
+  <!-- Bottom bevel -->
+  <rect x="1" y="29" width="30" height="2" fill="#1e1510" opacity="0.6"/>
+  <!-- Prompt ">" in green -->
+  <rect x="5" y="11" width="2" height="2" fill="#5dba5d"/>
+  <rect x="7" y="13" width="2" height="2" fill="#5dba5d"/>
+  <rect x="5" y="15" width="2" height="2" fill="#5dba5d"/>
+  <!-- Underscore cursor block in terracotta -->
+  <rect x="12" y="11" width="8" height="8" fill="#c47a3a"/>
+  <!-- Code slash "/" pixel -->
+  <rect x="22" y="17" width="2" height="2" fill="#7a9ebd"/>
+  <rect x="24" y="15" width="2" height="2" fill="#7a9ebd"/>
+  <rect x="26" y="13" width="2" height="2" fill="#7a9ebd"/>
+  <rect x="24" y="11" width="2" height="2" fill="#7a9ebd"/>
+  <!-- Small pixel detail -->
+  <rect x="22" y="11" width="2" height="2" fill="#7a9ebd" opacity="0.4"/>
+</svg>
