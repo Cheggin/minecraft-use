@@ -233,7 +233,7 @@ function Nav() {
             Donate
           </a>
           <a
-            href="https://github.com/Cheggin/minecraft-code"
+            href="https://github.com/Cheggin/minecraft-use"
             target="_blank"
             rel="noopener noreferrer"
             className="nav-link"
@@ -325,7 +325,7 @@ function HeroSection({ splash }: { splash: string }) {
             Get Started
           </a>
           <a
-            href="https://github.com/Cheggin/minecraft-code"
+            href="https://github.com/Cheggin/minecraft-use"
             target="_blank"
             rel="noopener noreferrer"
             className="mc-btn"
@@ -715,9 +715,9 @@ function Footer() {
             <div>
               <span className="section-label block mb-4">Project</span>
               <div className="flex flex-col gap-3">
-                <a href="https://github.com/Cheggin/minecraft-code" target="_blank" rel="noopener noreferrer" className="nav-link">GitHub</a>
+                <a href="https://github.com/Cheggin/minecraft-use" target="_blank" rel="noopener noreferrer" className="nav-link">GitHub</a>
                 <a href="https://www.npmjs.com/package/@reaganhsu/minecraft-code" target="_blank" rel="noopener noreferrer" className="nav-link">npm</a>
-                <a href="https://github.com/Cheggin/minecraft-code/issues" target="_blank" rel="noopener noreferrer" className="nav-link">Issues</a>
+                <a href="https://github.com/Cheggin/minecraft-use/issues" target="_blank" rel="noopener noreferrer" className="nav-link">Issues</a>
                 <a href="https://buymeacoffee.com/reaganhsu1b" target="_blank" rel="noopener noreferrer" className="nav-link" style={{ color: "var(--color-terracotta)" }}>Buy Me a Coffee</a>
               </div>
             </div>
