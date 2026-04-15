@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* ===== FONTS ===== */
 @font-face {
   font-family: "Minecraft";
   src: url("/fonts/Minecraftia-Regular.ttf") format("truetype");
@@ -16,301 +17,387 @@
   font-display: swap;
 }
 
+/* ===== DESIGN TOKENS ===== */
 @theme {
-  --color-light: #ffffff;
-  --color-dark: #171717;
-  --font-minecraft: "Minecraft", monospace;
-  --font-minecraft-title: "MinecraftTitle", monospace;
+  /* Fonts */
+  --font-mc: "Minecraft", monospace;
+  --font-mc-title: "MinecraftTitle", monospace;
+
+  /* Warm dark palette — terracotta-tinted neutrals */
+  --color-surface-deep: oklch(0.12 0.015 55);
+  --color-surface: oklch(0.16 0.012 55);
+  --color-surface-raised: oklch(0.20 0.015 55);
+  --color-surface-hover: oklch(0.24 0.018 55);
+
+  /* Brand colors extracted from the garden */
+  --color-terracotta: oklch(0.62 0.12 45);
+  --color-terracotta-dim: oklch(0.45 0.08 45);
+  --color-sea: oklch(0.55 0.10 230);
+  --color-sea-bright: oklch(0.70 0.12 230);
+  --color-garden: oklch(0.58 0.14 148);
+  --color-garden-dim: oklch(0.40 0.08 148);
+  --color-stone: oklch(0.75 0.03 70);
+  --color-sand: oklch(0.85 0.04 75);
+  --color-bloom: oklch(0.60 0.15 350);
+
+  /* Text */
+  --color-text-primary: oklch(0.92 0.02 70);
+  --color-text-secondary: oklch(0.72 0.02 65);
+  --color-text-dim: oklch(0.55 0.015 60);
+  --color-text-accent: oklch(0.82 0.08 80);
+
+  /* Borders */
+  --color-border: oklch(0.28 0.015 55);
+  --color-border-strong: oklch(0.38 0.02 55);
+
+  /* Spacing scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+}
+
+/* ===== BASE ===== */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: var(--font-minecraft);
-  background: #2d1b0e;
-  color: var(--color-light);
+  font-family: var(--font-mc);
+  background: var(--color-surface-deep);
+  color: var(--color-text-primary);
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ===== MINECRAFT BUTTON ===== */
-/* Authentic Minecraft button: flat stone with pixel beveled border */
+/* Minecraft font renders glyphs high in the em box.
+   Offset with padding-top on key containers. */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* ===== PIXEL TEXT SHADOWS ===== */
+.text-pixel {
+  text-shadow: 2px 2px 0px oklch(0.15 0.01 55);
+}
+
+.text-pixel-strong {
+  text-shadow:
+    3px 3px 0px oklch(0.12 0.01 55),
+    2px 3px 0px oklch(0.12 0.01 55),
+    3px 2px 0px oklch(0.12 0.01 55);
+}
+
+/* ===== TITLE TREATMENT ===== */
+.mc-hero-title {
+  font-family: var(--font-mc-title);
+  color: var(--color-text-primary);
+  text-shadow:
+    4px 4px 0px oklch(0.10 0.02 45),
+    3px 4px 0px oklch(0.10 0.02 45),
+    4px 3px 0px oklch(0.10 0.02 45),
+    -2px -2px 0px oklch(0.10 0.02 45),
+    2px -2px 0px oklch(0.10 0.02 45),
+    -2px 2px 0px oklch(0.10 0.02 45),
+    0px 3px 0px oklch(0.10 0.02 45),
+    3px 0px 0px oklch(0.10 0.02 45),
+    0px -2px 0px oklch(0.10 0.02 45),
+    -2px 0px 0px oklch(0.10 0.02 45);
+  letter-spacing: 6px;
+}
+
+.mc-hero-subtitle {
+  font-family: var(--font-mc-title);
+  color: oklch(0.80 0.06 75);
+  text-shadow:
+    3px 3px 0px oklch(0.10 0.02 45),
+    -1px -1px 0px oklch(0.10 0.02 45),
+    1px -1px 0px oklch(0.10 0.02 45),
+    -1px 1px 0px oklch(0.10 0.02 45);
+  letter-spacing: 4px;
+}
+
+/* ===== STONE BUTTON ===== */
 .mc-btn {
-  font-family: var(--font-minecraft);
-  font-size: 20px;
-  color: #e0e0e0;
-  text-shadow: 2px 2px 0px #383838;
-  background-color: #8b8b8b;
+  font-family: var(--font-mc);
+  font-size: 16px;
+  color: var(--color-text-primary);
+  text-shadow: 2px 2px 0px oklch(0.20 0.01 55);
+  background-color: oklch(0.45 0.015 55);
   background-image:
-    repeating-conic-gradient(#767676 0% 25%, transparent 0% 50%) 0 0 / 8px 8px,
-    repeating-conic-gradient(#999999 0% 25%, transparent 0% 50%) 4px 4px / 8px 8px,
-    repeating-conic-gradient(#6e6e6e 0% 25%, transparent 0% 50%) 2px 6px / 6px 6px,
-    repeating-conic-gradient(#a0a0a0 0% 25%, transparent 0% 50%) 5px 1px / 4px 4px,
-    linear-gradient(135deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.04) 75%, transparent 75%) 0 0 / 16px 16px;
-  border: 3px solid #000000;
-  outline: none;
-  padding: 6px 24px 6px;
-  padding-top: 18px;
-  min-height: 56px;
-  display: flex;
+    repeating-conic-gradient(oklch(0.40 0.01 55) 0% 25%, transparent 0% 50%) 0 0 / 8px 8px,
+    repeating-conic-gradient(oklch(0.50 0.02 55) 0% 25%, transparent 0% 50%) 4px 4px / 8px 8px;
+  border: 2px solid oklch(0.20 0.01 55);
+  padding: 16px 24px 10px;
+  min-height: 48px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
   cursor: pointer;
-  position: relative;
-  text-align: center;
   box-shadow:
-    inset 3px 3px 0px #aaaaaa,
-    inset -3px -3px 0px #555555;
+    inset 2px 2px 0px oklch(0.55 0.02 55),
+    inset -2px -2px 0px oklch(0.30 0.01 55);
+  transition: background-color 0.1s;
 }
 
 .mc-btn:hover {
-  background-color: #9a9a9a;
-  color: #ffffa0;
-  text-shadow: 2px 2px 0px #383838;
-  border-color: #ffffff;
+  background-color: oklch(0.52 0.02 55);
+  color: oklch(0.95 0.10 85);
+  text-shadow: 2px 2px 0px oklch(0.25 0.02 55);
+  border-color: oklch(0.80 0.03 70);
   box-shadow:
-    inset 3px 3px 0px #c0c0c0,
-    inset -3px -3px 0px #606060;
+    inset 2px 2px 0px oklch(0.62 0.02 55),
+    inset -2px -2px 0px oklch(0.35 0.01 55);
 }
 
 .mc-btn:active {
   box-shadow:
-    inset 3px 3px 0px #555555,
-    inset -3px -3px 0px #aaaaaa;
+    inset 2px 2px 0px oklch(0.30 0.01 55),
+    inset -2px -2px 0px oklch(0.55 0.02 55);
 }
 
 .mc-btn:focus-visible {
-  outline: 2px solid var(--color-light);
+  outline: 2px solid var(--color-terracotta);
   outline-offset: 2px;
 }
 
-.mc-btn-half {
-  width: calc(50% - 4px);
-}
-
-/* ===== MINECRAFT TITLE ===== */
-.mc-title {
-  font-family: var(--font-minecraft-title);
-  color: var(--color-light);
-  text-shadow:
-    4px 4px 0px #3f3f3f,
-    3px 4px 0px #3f3f3f,
-    4px 3px 0px #3f3f3f,
-    -2px -2px 0px #3f3f3f,
-    2px -2px 0px #3f3f3f,
-    -2px 2px 0px #3f3f3f,
-    0px 3px 0px #3f3f3f,
-    3px 0px 0px #3f3f3f,
-    0px -2px 0px #3f3f3f,
-    -2px 0px 0px #3f3f3f;
-  letter-spacing: 6px;
-}
-
-.mc-subtitle {
-  font-family: var(--font-minecraft-title);
-  color: #bbbbbb;
-  text-shadow:
-    3px 3px 0px #3f3f3f,
-    -1px -1px 0px #3f3f3f,
-    1px -1px 0px #3f3f3f,
-    -1px 1px 0px #3f3f3f,
-    0px 2px 0px #3f3f3f,
-    2px 0px 0px #3f3f3f;
-  letter-spacing: 4px;
-}
-
-/* ===== SPLASH TEXT ===== */
-@keyframes mc-splash {
-  0%, 100% {
-    transform: rotate(-18deg) scale(1);
-  }
-  50% {
-    transform: rotate(-18deg) scale(1.15);
-  }
-}
-
-.mc-splash {
-  animation: mc-splash 1.5s ease-in-out infinite;
-  color: #ffff00;
-  font-family: var(--font-minecraft);
-  text-shadow:
-    2px 2px 0px #3f3f00,
-    -1px -1px 0px #3f3f00,
-    1px -1px 0px #3f3f00,
-    -1px 1px 0px #3f3f00;
-}
-
-/* ===== VERSION TEXT ===== */
-.mc-version {
-  font-family: var(--font-minecraft);
-  font-size: 10px;
-  color: var(--color-light);
-  text-shadow: 1px 1px 0px #3f3f3f;
-}
-
-/* ===== SCHEMATIC CARD ===== */
-.mc-card {
-  font-family: var(--font-minecraft);
-  background-color: #8b8b8b;
-  background-image:
-    repeating-conic-gradient(#767676 0% 25%, transparent 0% 50%) 0 0 / 8px 8px,
-    repeating-conic-gradient(#999999 0% 25%, transparent 0% 50%) 4px 4px / 8px 8px,
-    repeating-conic-gradient(#6e6e6e 0% 25%, transparent 0% 50%) 2px 6px / 6px 6px,
-    repeating-conic-gradient(#a0a0a0 0% 25%, transparent 0% 50%) 5px 1px / 4px 4px,
-    linear-gradient(135deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.04) 75%, transparent 75%) 0 0 / 16px 16px;
-  border: 2px solid #000000;
-  box-shadow:
-    inset 2px 2px 0px #aaaaaa,
-    inset -2px -2px 0px #555555;
-  padding: 20px 20px 12px;
-  cursor: pointer;
+/* ===== TERMINAL BLOCK ===== */
+.terminal-block {
+  font-family: var(--font-mc);
+  font-size: 13px;
+  background: oklch(0.10 0.01 55);
+  border: 2px solid var(--color-border);
+  padding: 24px 20px 16px;
+  line-height: 1.8;
   overflow: visible;
 }
 
-.mc-card:hover {
-  background-color: #9a9a9a;
-  border-color: #ffffff;
-  box-shadow:
-    inset 2px 2px 0px #c0c0c0,
-    inset -2px -2px 0px #606060;
+.terminal-prompt {
+  color: var(--color-garden);
 }
 
-.mc-card-title {
-  font-family: var(--font-minecraft);
+.terminal-command {
+  color: var(--color-text-primary);
+}
+
+.terminal-comment {
+  color: var(--color-text-dim);
+}
+
+.terminal-output {
+  color: var(--color-text-secondary);
+}
+
+.terminal-flag {
+  color: var(--color-sea-bright);
+}
+
+.terminal-string {
+  color: var(--color-terracotta);
+}
+
+/* ===== SECTION STYLES ===== */
+.section-heading {
+  font-family: var(--font-mc-title);
+  font-size: clamp(28px, 5vw, 48px);
+  color: var(--color-text-primary);
+  text-shadow:
+    3px 3px 0px oklch(0.10 0.015 55),
+    -1px -1px 0px oklch(0.10 0.015 55),
+    1px -1px 0px oklch(0.10 0.015 55),
+    -1px 1px 0px oklch(0.10 0.015 55);
+  letter-spacing: 3px;
+}
+
+.section-label {
+  font-family: var(--font-mc);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-terracotta);
+  text-shadow: 1px 1px 0px oklch(0.15 0.01 55);
+}
+
+/* ===== FEATURE ITEM ===== */
+.feature-item {
+  padding: var(--space-lg) var(--space-lg) var(--space-lg) 0;
+}
+
+.feature-title {
+  font-family: var(--font-mc);
   font-size: 16px;
-  color: #e0e0e0;
-  text-shadow: 2px 2px 0px #383838;
-  padding-top: 4px;
+  color: var(--color-text-accent);
+  text-shadow: 1px 1px 0px oklch(0.15 0.01 55);
+  margin-bottom: var(--space-sm);
 }
 
-.mc-card-meta {
-  font-family: var(--font-minecraft);
+.feature-desc {
+  font-family: var(--font-mc);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-shadow: 1px 1px 0px oklch(0.10 0.005 55);
+  line-height: 1.7;
+}
+
+/* ===== ARCHITECTURE BOX ===== */
+.arch-box {
+  font-family: var(--font-mc);
   font-size: 12px;
-  color: #bbbbbb;
-  text-shadow: 1px 1px 0px #383838;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--color-text-secondary);
+  text-shadow: 1px 1px 0px oklch(0.10 0.005 55);
+  text-align: center;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* ===== THUMBNAIL ===== */
-.mc-thumbnail {
-  width: 44px;
-  height: 44px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 2px solid #555555;
+.arch-box-active {
+  border-color: var(--color-terracotta-dim);
+  color: var(--color-terracotta);
+}
+
+.arch-box-highlight {
+  border-color: var(--color-garden-dim);
+  color: var(--color-garden);
+}
+
+/* ===== SCHEMATIC CARD ===== */
+.schematic-card {
+  font-family: var(--font-mc);
+  background: var(--color-surface-raised);
+  border: 2px solid var(--color-border);
+  padding: 22px var(--space-lg) var(--space-md);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.schematic-card:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
 }
 
 /* ===== SEARCH INPUT ===== */
 .mc-input {
-  font-family: var(--font-minecraft);
-  font-size: 14px;
-  color: #e0e0e0;
-  text-shadow: 1px 1px 0px #383838;
-  background: #000000;
-  border: 2px solid #a0a0a0;
-  box-shadow:
-    inset 2px 2px 0px #333333,
-    inset -2px -2px 0px #555555;
-  padding: 8px 12px;
+  font-family: var(--font-mc);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  text-shadow: 1px 1px 0px oklch(0.10 0.005 55);
+  background: oklch(0.10 0.01 55);
+  border: 2px solid var(--color-border);
+  padding: 10px 14px;
   outline: none;
-  min-height: 40px;
+  min-height: 44px;
+  transition: border-color 0.15s;
 }
 
 .mc-input::placeholder {
-  color: #707070;
-  text-shadow: 1px 1px 0px #222222;
+  color: var(--color-text-dim);
 }
 
 .mc-input:focus {
-  border-color: #c8c8ff;
+  border-color: var(--color-terracotta-dim);
 }
 
 /* ===== CATEGORY TAG ===== */
 .mc-tag {
-  font-family: var(--font-minecraft);
-  font-size: 11px;
-  color: #e0e0e0;
-  text-shadow: 1px 1px 0px #383838;
-  background-color: #8b8b8b;
-  background-image:
-    repeating-conic-gradient(#767676 0% 25%, transparent 0% 50%) 0 0 / 8px 8px,
-    repeating-conic-gradient(#999999 0% 25%, transparent 0% 50%) 4px 4px / 8px 8px,
-    repeating-conic-gradient(#6e6e6e 0% 25%, transparent 0% 50%) 2px 6px / 6px 6px,
-    repeating-conic-gradient(#a0a0a0 0% 25%, transparent 0% 50%) 5px 1px / 4px 4px,
-    linear-gradient(135deg, rgba(255,255,255,0.04) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.04) 75%, transparent 75%) 0 0 / 16px 16px;
-  border: 2px solid #000000;
-  box-shadow:
-    inset 1px 1px 0px #aaaaaa,
-    inset -1px -1px 0px #555555;
-  padding: 4px 12px;
+  font-family: var(--font-mc);
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  text-shadow: 1px 1px 0px oklch(0.10 0.005 55);
+  background: var(--color-surface-raised);
+  border: 2px solid var(--color-border);
+  padding: 6px 14px;
   cursor: pointer;
   min-height: 32px;
   display: flex;
   align-items: center;
+  transition: border-color 0.15s, color 0.15s;
 }
 
 .mc-tag:hover {
-  background-color: #9a9a9a;
-  color: #ffffa0;
-  border-color: #ffffff;
-  box-shadow:
-    inset 1px 1px 0px #c0c0c0,
-    inset -1px -1px 0px #606060;
+  border-color: var(--color-border-strong);
+  color: var(--color-text-accent);
 }
 
 .mc-tag-active {
-  background-color: #6a6a6a;
-  color: #ffffa0;
-  border-color: #ffffff;
-  box-shadow:
-    inset 1px 1px 0px #505050,
-    inset -1px -1px 0px #888888;
+  border-color: var(--color-terracotta-dim);
+  color: var(--color-terracotta);
+  background: oklch(0.20 0.025 45);
 }
 
-/* ===== PAGE TEXT ===== */
-.mc-page-text {
-  font-family: var(--font-minecraft);
-  font-size: 12px;
-  color: #e0e0e0;
-  text-shadow: 1px 1px 0px #383838;
+/* ===== NAV ===== */
+.nav-link {
+  font-family: var(--font-mc);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-shadow: 1px 1px 0px oklch(0.10 0.005 55);
+  text-decoration: none;
+  padding: 8px 0;
+  transition: color 0.15s;
 }
 
-.mc-page-text-dim {
-  font-family: var(--font-minecraft);
-  font-size: 10px;
-  color: #aaaaaa;
-  text-shadow: 1px 1px 0px #333333;
+.nav-link:hover {
+  color: var(--color-text-accent);
 }
 
-/* ===== MOBILE RESPONSIVE ===== */
-@media (max-width: 640px) {
-  .mc-btn {
-    font-size: 14px;
-    min-height: 44px;
-    padding: 14px 16px 6px;
+/* ===== STEP NUMBER ===== */
+.step-number {
+  font-family: var(--font-mc-title);
+  font-size: 32px;
+  color: var(--color-terracotta-dim);
+  text-shadow: 2px 2px 0px oklch(0.10 0.01 55);
+  line-height: 1;
+}
+
+/* ===== SCROLL ANIMATIONS ===== */
+@media (prefers-reduced-motion: no-preference) {
+  .fade-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .mc-card {
-    padding: 14px 12px 10px;
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
-  .mc-card-title {
-    font-size: 13px;
-  }
+  .fade-up-delay-1 { transition-delay: 0.1s; }
+  .fade-up-delay-2 { transition-delay: 0.2s; }
+  .fade-up-delay-3 { transition-delay: 0.3s; }
+}
 
-  .mc-card-meta {
-    font-size: 9px;
-  }
+@media (prefers-reduced-motion: reduce) {
+  .fade-up { opacity: 1; transform: none; }
+}
 
-  .mc-input {
-    font-size: 12px;
-    min-height: 36px;
-    padding: 8px 10px;
-  }
+/* ===== SPLASH TEXT ===== */
+@keyframes mc-splash {
+  0%, 100% { transform: rotate(-15deg) scale(1); }
+  50% { transform: rotate(-15deg) scale(1.12); }
+}
 
-  .mc-tag {
-    font-size: 10px;
-    min-height: 28px;
-    padding: 3px 8px;
-  }
+.mc-splash {
+  animation: mc-splash 1.5s ease-in-out infinite;
+  color: oklch(0.90 0.15 95);
+  font-family: var(--font-mc);
+  text-shadow:
+    2px 2px 0px oklch(0.30 0.05 90),
+    -1px -1px 0px oklch(0.30 0.05 90),
+    1px -1px 0px oklch(0.30 0.05 90),
+    -1px 1px 0px oklch(0.30 0.05 90);
 }
 
 /* ===== SCROLLBAR ===== */
@@ -319,14 +406,28 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-surface-deep);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #8b8b8b;
-  border: 1px solid #555555;
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #aaaaaa;
+  background: oklch(0.35 0.02 55);
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 640px) {
+  .mc-btn {
+    font-size: 13px;
+    min-height: 44px;
+    padding: 14px 16px 8px;
+  }
+
+  .terminal-block {
+    font-size: 10px;
+    padding: 12px 14px;
+  }
 }

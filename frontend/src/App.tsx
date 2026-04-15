@@ -1,8 +1,4 @@
-import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-
-type Page = "menu" | "schematics" | "catalog" | "settings" | "about";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 
 const SPLASH_TEXTS = [
   "Claude Code in MC!",
@@ -18,379 +14,752 @@ const SPLASH_TEXTS = [
   "Coding in Minecraft!",
 ];
 
-function getRandomSplash() {
-  return SPLASH_TEXTS[Math.floor(Math.random() * SPLASH_TEXTS.length)];
+const NAV_LINKS = [
+  { label: "Features", href: "#features" },
+  { label: "Commands", href: "#commands" },
+  { label: "Architecture", href: "#architecture" },
+  { label: "Schematics", href: "#schematics" },
+  { label: "Get Started", href: "#quickstart" },
+];
+
+const FEATURES = [
+  {
+    title: "Spawn AI Agents",
+    desc: "Summon Claude Code as a Minecraft villager. It follows you around, displays output above its head with full ANSI color rendering, and responds to your chat messages.",
+    command: "/agent alex",
+    output: "Spawned librarian villager \"alex\" running Claude Code",
+  },
+  {
+    title: "Find Schematics Online",
+    desc: "Browser Use searches schematic sites for you. It finds builds, downloads the .litematica files, and stores them in your Convex database — ready to place in your world.",
+    command: "/browser-use get-schematics castle",
+    output: "Searching minecraft-schematics.com... Found 12 results",
+  },
+  {
+    title: "Agent-to-Agent Chat",
+    desc: "Your agents can talk to each other. Have them debate, review code, or collaborate on tasks — all visible as floating text in your world.",
+    command: '/agent-chat alex rex "debate rust vs python"',
+    output: "Starting multi-round conversation between alex and rex",
+  },
+  {
+    title: "Build from the Web",
+    desc: "Download schematics from the web and place them in your world. The full pipeline: search, download, store in Convex, load in Litematica.",
+    command: "/build castle",
+    output: "Downloaded castle.litematica — open Litematica (M+C) to place",
+  },
+];
+
+const COMMANDS = [
+  { cmd: "/claude hello", comment: "talk to Claude Code" },
+  { cmd: "/agent alex", comment: "spawn a villager agent" },
+  { cmd: "/agent rex wolf", comment: "spawn as a wolf" },
+  { cmd: "/browser-use get-schematics tower", comment: "search the web" },
+  { cmd: "/build list", comment: "list downloaded schematics" },
+  { cmd: "/build 27283", comment: "place a schematic" },
+  { cmd: '/agent-tell alex rex "review this"', comment: "agents talk" },
+  { cmd: "/code", comment: "open VS Code in-game" },
+  { cmd: "/agents", comment: "open agent dashboard" },
+  { cmd: "/despawn alex", comment: "remove an agent" },
+];
+
+const QUICKSTART_STEPS = [
+  {
+    title: "Install",
+    command: "npm install -g @reaganhsu/minecraft-code",
+  },
+  {
+    title: "Check prerequisites",
+    command: "minecraft-code doctor",
+  },
+  {
+    title: "Set up everything",
+    command: "minecraft-code init",
+  },
+  {
+    title: "Launch",
+    command: "minecraft-code start",
+  },
+];
+
+const MOB_TYPES = [
+  "villager", "wolf", "cat", "pig", "cow", "sheep", "chicken",
+  "fox", "parrot", "rabbit", "horse", "donkey", "llama", "goat",
+  "bee", "axolotl", "frog", "camel", "sniffer", "allay",
+  "iron_golem", "snow_golem", "zombie", "skeleton", "creeper", "enderman",
+];
+
+/* ===== INTERSECTION OBSERVER HOOK ===== */
+
+function useFadeUp() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      el.classList.add("visible");
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("visible");
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return ref;
 }
 
-export default function App() {
-  const [page, setPage] = useState<Page>("menu");
-
-  const navigate = (target: Page) => {
-    console.log(`[navigate] ${page} -> ${target}`);
-    // Ping the dev server so the request appears in logs
-    fetch(`/__log?nav=${page}-to-${target}`).catch(() => {});
-    setPage(target);
-  };
-
-  if (page === "menu") {
-    return <MainMenu onNavigate={navigate} />;
-  }
-
+function FadeUp({ children, className = "", delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+  const ref = useFadeUp();
+  const delayClass = delay > 0 ? `fade-up-delay-${delay}` : "";
   return (
-    <PageShell title={PAGE_TITLES[page]} onBack={() => navigate("menu")}>
-      {page === "schematics" && <SchematicsPage />}
-      {page === "catalog" && <CatalogPage />}
-      {page === "settings" && <SettingsPage />}
-      {page === "about" && <AboutPage />}
-    </PageShell>
+    <div ref={ref} className={`fade-up ${delayClass} ${className}`}>
+      {children}
+    </div>
   );
 }
 
-const PAGE_TITLES: Record<Exclude<Page, "menu">, string> = {
-  schematics: "Schematics",
-  catalog: "Schematic Catalog",
-  settings: "Settings",
-  about: "About",
-};
+/* ===== COPYABLE COMMAND ===== */
 
-/* ===== MAIN MENU ===== */
+function CopyableCommand({ command }: { command: string }) {
+  const [copied, setCopied] = useState(false);
 
-function MainMenu({ onNavigate }: { onNavigate: (page: Page) => void }) {
-  const [splash] = useState(getRandomSplash);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(command).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden select-none">
-      {/* Background image */}
+    <div className="terminal-block w-full max-w-lg text-left mb-8 flex items-center justify-between gap-3" style={{ padding: "20px 16px 16px" }}>
+      <div style={{ lineHeight: 1.6, whiteSpace: "nowrap", overflowX: "auto", fontSize: "clamp(10px, 2.8vw, 13px)" }}>
+        <span className="terminal-prompt">$ </span>
+        <span className="terminal-command">{command}</span>
+      </div>
+      <button
+        onClick={handleCopy}
+        className="shrink-0 cursor-pointer"
+        style={{
+          fontFamily: "var(--font-mc)",
+          fontSize: "10px",
+          color: copied ? "var(--color-garden)" : "var(--color-text-dim)",
+          textShadow: "1px 1px 0px oklch(0.08 0.005 55)",
+          background: "transparent",
+          border: "none",
+          padding: "4px 8px",
+          transition: "color 0.15s",
+          appearance: "none",
+          WebkitAppearance: "none",
+          outline: "none",
+          boxShadow: "none",
+        }}
+        aria-label="Copy command"
+      >
+        {copied ? "copied" : "copy"}
+      </button>
+    </div>
+  );
+}
+
+/* ===== MAIN APP ===== */
+
+export default function App() {
+  const [splash] = useState(() => SPLASH_TEXTS[Math.floor(Math.random() * SPLASH_TEXTS.length)]);
+
+  return (
+    <div className="min-h-screen">
+      <Nav />
+      <HeroSection splash={splash} />
+      <FeaturesSection />
+      <CommandsSection />
+      <ArchitectureSection />
+      <SchematicsSection />
+      <QuickStartSection />
+      <Footer />
+    </div>
+  );
+}
+
+/* ===== NAVIGATION ===== */
+
+function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 60);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 transition-colors duration-300"
+      style={{
+        background: scrolled ? "oklch(0.12 0.015 55 / 0.92)" : "transparent",
+        backdropFilter: scrolled ? "blur(8px)" : "none",
+      }}
+    >
+      <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
+        <a href="#" className="nav-link" style={{ fontSize: "13px", color: "var(--color-text-accent)" }}>
+          minecraft-code
+        </a>
+        <div className="hidden sm:flex items-center gap-8">
+          {NAV_LINKS.map((link) => (
+            <a key={link.href} href={link.href} className="nav-link">
+              {link.label}
+            </a>
+          ))}
+        </div>
+        <div className="flex items-center gap-6">
+          <a
+            href="https://buymeacoffee.com/reaganhsu1b"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav-link"
+            style={{ color: "var(--color-terracotta)" }}
+          >
+            Donate
+          </a>
+          <a
+            href="https://github.com/Cheggin/minecraft-code"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav-link"
+          >
+            GitHub
+          </a>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+/* ===== HERO ===== */
+
+function HeroSection({ splash }: { splash: string }) {
+  return (
+    <section className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden">
+      {/* Garden background */}
       <img
-        src="/minecraft-bg.webp"
+        src="/hero-garden.png"
         alt=""
         className="absolute inset-0 w-full h-full object-cover"
-        style={{ imageRendering: "auto", filter: "blur(3px) brightness(0.7)", transform: "scale(1.05)" }}
+        style={{ imageRendering: "auto" }}
       />
-      <div className="absolute inset-0 bg-black/25" />
+      {/* Gradient overlay — strong at top for nav, heavier center for text readability */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(
+            to bottom,
+            oklch(0.08 0.015 55 / 0.85) 0%,
+            oklch(0.10 0.015 55 / 0.55) 20%,
+            oklch(0.10 0.015 55 / 0.50) 40%,
+            oklch(0.10 0.015 55 / 0.45) 55%,
+            oklch(0.10 0.015 55 / 0.55) 70%,
+            oklch(0.10 0.015 55 / 0.95) 100%
+          )`,
+        }}
+      />
 
-      <div className="relative z-10 flex flex-col items-center justify-between h-full py-4">
-        {/* Title */}
-        <div className="flex flex-col items-center mt-[4vh] sm:mt-[8vh] relative">
-          <TitleLogo />
-          <div className="absolute -right-4 sm:-right-28 -bottom-6 sm:top-20">
-            <span className="mc-splash text-sm sm:text-2xl whitespace-nowrap block">
+      <div className="relative z-10 flex flex-col items-center px-6 pt-24 pb-16 max-w-4xl text-center">
+        {/* Title block */}
+        <div className="relative mb-8">
+          <h1
+            className="mc-hero-title leading-none"
+            style={{ fontSize: "clamp(48px, 12vw, 120px)" }}
+          >
+            MINECRAFT
+          </h1>
+          <span
+            className="mc-hero-subtitle block leading-none mt-1 sm:mt-2"
+            style={{ fontSize: "clamp(22px, 5vw, 56px)" }}
+          >
+            — CODE —
+          </span>
+
+          {/* Splash text */}
+          <div className="absolute -right-2 sm:-right-20 top-12 sm:top-16">
+            <span className="mc-splash text-sm sm:text-xl whitespace-nowrap block">
               {splash}
             </span>
           </div>
         </div>
 
-        {/* Buttons */}
-        <div className="flex flex-col items-center gap-2 sm:gap-3 w-[90vw] sm:w-[75vw] max-w-[800px]">
-          <McButton label="My Schematics" wide onClick={() => onNavigate("schematics")} />
-          <McButton label="Browse Catalog" wide onClick={() => onNavigate("catalog")} />
+        {/* Tagline */}
+        <p
+          className="text-pixel-strong mb-12"
+          style={{
+            fontFamily: "var(--font-mc)",
+            fontSize: "clamp(12px, 2.5vw, 16px)",
+            color: "var(--color-text-primary)",
+            lineHeight: 1.8,
+            maxWidth: "50ch",
+            background: "oklch(0.08 0.01 55 / 0.75)",
+            padding: "16px 20px",
+          }}
+        >
+          Turn Minecraft into a terminal for AI agents. Spawn Claude Code
+          as a villager, find schematics on the web, and build
+          them in your world — all from in-game chat.
+        </p>
 
-          <div className="flex gap-2 sm:gap-3 w-full mt-1 sm:mt-2">
-            <McButton label="Settings..." half onClick={() => onNavigate("settings")} />
-            <McButton label="About" half onClick={() => onNavigate("about")} />
+        {/* Install command */}
+        <CopyableCommand command="npm install -g @reaganhsu/minecraft-code" />
+
+        {/* CTA buttons */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <a href="#quickstart" className="mc-btn" style={{ minWidth: 180 }}>
+            Get Started
+          </a>
+          <a
+            href="https://github.com/Cheggin/minecraft-code"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mc-btn"
+            style={{ minWidth: 180, opacity: 0.85 }}
+          >
+            View Source
+          </a>
+          <a
+            href="https://buymeacoffee.com/reaganhsu1b"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mc-btn"
+            style={{ minWidth: 180, color: "var(--color-terracotta)" }}
+          >
+            Buy Me a Coffee
+          </a>
+        </div>
+
+        {/* Version */}
+        <p
+          className="mt-12"
+          style={{
+            fontFamily: "var(--font-mc)",
+            fontSize: "10px",
+            color: "var(--color-text-dim)",
+            textShadow: "1px 1px 0px oklch(0.10 0.005 55)",
+          }}
+        >
+          v0.1.1 &middot; Fabric 1.21.1 &middot; MIT License
+        </p>
+      </div>
+
+      {/* Scroll hint */}
+      <div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
+        style={{
+          fontFamily: "var(--font-mc)",
+          fontSize: "10px",
+          color: "var(--color-text-dim)",
+          textShadow: "1px 1px 0px oklch(0.10 0.005 55)",
+        }}
+      >
+        scroll down
+      </div>
+    </section>
+  );
+}
+
+/* ===== FEATURES ===== */
+
+function FeaturesSection() {
+  return (
+    <section id="features" className="relative py-24 sm:py-32">
+      <div className="max-w-5xl mx-auto px-6">
+        <FadeUp>
+          <span className="section-label block mb-4">What it does</span>
+          <h2 className="section-heading mb-16">Your Minecraft world,<br />now with AI agents</h2>
+        </FadeUp>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
+          {FEATURES.map((feature, i) => (
+            <FadeUp key={feature.title} delay={Math.min(i + 1, 3) as 1 | 2 | 3}>
+              <div className="feature-item">
+                <h3 className="feature-title">{feature.title}</h3>
+                <p className="feature-desc mb-4">{feature.desc}</p>
+                <div className="terminal-block">
+                  <div>
+                    <span className="terminal-prompt">{">"} </span>
+                    <span className="terminal-command">{feature.command}</span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="terminal-output">{feature.output}</span>
+                  </div>
+                </div>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ===== COMMANDS ===== */
+
+function CommandsSection() {
+  return (
+    <section id="commands" className="relative py-24 sm:py-32" style={{ background: "var(--color-surface)" }}>
+      <div className="max-w-5xl mx-auto px-6">
+        <FadeUp>
+          <span className="section-label block mb-4">Commands</span>
+          <h2 className="section-heading mb-6">Everything from chat</h2>
+          <p className="feature-desc mb-12" style={{ maxWidth: "55ch" }}>
+            No GUI needed. Every feature is a chat command. Type it in Minecraft,
+            the mod sends it to the right tmux pane, and the response appears
+            above your villager's head.
+          </p>
+        </FadeUp>
+
+        <FadeUp delay={1}>
+          <div className="terminal-block max-w-2xl">
+            {COMMANDS.map((c, i) => (
+              <div key={i} className={i > 0 ? "mt-2" : ""}>
+                <span className="terminal-prompt">{">"} </span>
+                <span className="terminal-command">{c.cmd}</span>
+                <span className="terminal-comment">  {"// "}{c.comment}</span>
+              </div>
+            ))}
+          </div>
+        </FadeUp>
+
+        {/* Mob types */}
+        <FadeUp delay={2}>
+          <div className="mt-16">
+            <span className="section-label block mb-4">Supported mobs</span>
+            <p className="feature-desc mb-6">
+              Spawn your agent as any of these mob types:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {MOB_TYPES.map((mob) => (
+                <span
+                  key={mob}
+                  className="mc-tag"
+                >
+                  {mob}
+                </span>
+              ))}
+            </div>
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+  );
+}
+
+/* ===== ARCHITECTURE ===== */
+
+function ArchitectureSection() {
+  return (
+    <section id="architecture" className="relative py-24 sm:py-32">
+      <div className="max-w-5xl mx-auto px-6">
+        <FadeUp>
+          <span className="section-label block mb-4">How it works</span>
+          <h2 className="section-heading mb-6">tmux-bridged architecture</h2>
+          <p className="feature-desc mb-12" style={{ maxWidth: "60ch" }}>
+            The mod connects to tmux terminal panes via smux. Each command
+            sends text to a named pane and reads the output back. The mod
+            doesn't know or care what's running in each pane.
+          </p>
+        </FadeUp>
+
+        {/* Flow diagram */}
+        <FadeUp delay={1}>
+          <div className="flex flex-col sm:flex-row items-center gap-3 mb-16 max-w-2xl">
+            <div className="arch-box flex-1 w-full">Minecraft Chat</div>
+            <span style={{ fontFamily: "var(--font-mc)", fontSize: "16px", color: "var(--color-text-dim)" }}>→</span>
+            <div className="arch-box arch-box-active flex-1 w-full">TmuxBridge.java</div>
+            <span style={{ fontFamily: "var(--font-mc)", fontSize: "16px", color: "var(--color-text-dim)" }}>→</span>
+            <div className="arch-box flex-1 w-full">tmux pane</div>
+            <span style={{ fontFamily: "var(--font-mc)", fontSize: "16px", color: "var(--color-text-dim)" }}>→</span>
+            <div className="arch-box arch-box-highlight flex-1 w-full">AI responds</div>
+          </div>
+        </FadeUp>
+
+        {/* tmux layout */}
+        <FadeUp delay={2}>
+          <TmuxDiagram />
+        </FadeUp>
+      </div>
+    </section>
+  );
+}
+
+/* ===== SCHEMATICS ===== */
+
+/* ===== TMUX DIAGRAM ===== */
+
+function TmuxPane({ name, detail, color }: { name: string; detail: string; color?: string }) {
+  return (
+    <div
+      style={{
+        background: "var(--color-surface-deep)",
+        border: "1px solid var(--color-border)",
+        padding: "14px 16px 10px",
+        fontFamily: "var(--font-mc)",
+        fontSize: "12px",
+      }}
+    >
+      <div style={{ color: color ?? "var(--color-text-primary)", textShadow: "1px 1px 0px oklch(0.08 0.005 55)", marginBottom: 4 }}>
+        {name}
+      </div>
+      <div style={{ color: "var(--color-text-dim)", fontSize: "10px", textShadow: "1px 1px 0px oklch(0.08 0.005 55)" }}>
+        {detail}
+      </div>
+    </div>
+  );
+}
+
+function TmuxDiagram() {
+  return (
+    <div style={{ maxWidth: 480 }}>
+      <div
+        style={{
+          border: "2px solid var(--color-border)",
+          background: "var(--color-surface)",
+          padding: "16px",
+        }}
+      >
+        <div style={{
+          fontFamily: "var(--font-mc)",
+          fontSize: "10px",
+          color: "var(--color-text-dim)",
+          textShadow: "1px 1px 0px oklch(0.08 0.005 55)",
+          marginBottom: 12,
+          paddingTop: 4,
+        }}>
+          tmux session "minecraft-code"
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+          <TmuxPane name="sidecar" detail="FastAPI" />
+          <TmuxPane name="claude" detail="lfg" color="var(--color-garden)" />
+          <TmuxPane name="minecraft" detail="gradlew" />
+          <TmuxPane name="browser" detail="repl" color="var(--color-sea-bright)" />
+          <TmuxPane name="shell" detail="bash" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const SHOWCASE_SCHEMATICS = [
+  { name: "Medieval Castle", category: "Castle", dims: "48x35x52" },
+  { name: "Japanese Pagoda", category: "Tower", dims: "22x41x22" },
+  { name: "Viking Longhouse", category: "House", dims: "32x18x14" },
+  { name: "Wizard Tower", category: "Tower", dims: "16x45x16" },
+  { name: "Roman Colosseum", category: "Castle", dims: "64x28x64" },
+  { name: "Treehouse Village", category: "House", dims: "38x32x38" },
+];
+
+function SchematicsSection() {
+  return (
+    <section id="schematics" className="relative py-24 sm:py-32" style={{ background: "var(--color-surface)" }}>
+      <div className="max-w-5xl mx-auto px-6">
+        <FadeUp>
+          <span className="section-label block mb-4">Schematics</span>
+          <h2 className="section-heading mb-6">Build from the web</h2>
+          <p className="feature-desc mb-12" style={{ maxWidth: "55ch" }}>
+            Ask Claude to find schematics online. They get downloaded, stored in
+            your Convex database, and are ready to place in your world
+            via Litematica.
+          </p>
+        </FadeUp>
+
+        {/* Pipeline demo */}
+        <FadeUp delay={1}>
+          <div className="terminal-block max-w-2xl mb-12">
+            <div><span className="terminal-prompt">{">"} </span><span className="terminal-command">/browser-use get-schematics castle</span></div>
+            <div className="mt-1"><span className="terminal-output">Searching minecraft-schematics.com... Found 12 results</span></div>
+            <div><span className="terminal-output">Downloading "Medieval Castle" (48x35x52)...</span></div>
+            <div><span className="terminal-output">Saved to Convex database</span></div>
+            <div className="mt-2"><span className="terminal-prompt">{">"} </span><span className="terminal-command">/build list</span></div>
+            <div className="mt-1"><span className="terminal-output">1. Medieval Castle — Castle — 48x35x52</span></div>
+            <div><span className="terminal-output">2. Japanese Pagoda — Tower — 22x41x22</span></div>
+            <div><span className="terminal-output">3. Viking Longhouse — House — 32x18x14</span></div>
+            <div className="mt-2"><span className="terminal-prompt">{">"} </span><span className="terminal-command">/build "Medieval Castle"</span></div>
+            <div className="mt-1"><span className="terminal-output">Downloaded — open Litematica (M+C) to place</span></div>
+          </div>
+        </FadeUp>
+
+        {/* Example schematics */}
+        <FadeUp delay={2}>
+          <span className="section-label block mb-4">Example catalog</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-3xl">
+            {SHOWCASE_SCHEMATICS.map((s) => (
+              <div key={s.name} className="schematic-card flex flex-col gap-1">
+                <span
+                  style={{
+                    fontFamily: "var(--font-mc)",
+                    fontSize: "14px",
+                    color: "var(--color-text-accent)",
+                    textShadow: "1px 1px 0px oklch(0.10 0.005 55)",
+                  }}
+                  className="truncate"
+                >
+                  {s.name}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-mc)",
+                    fontSize: "10px",
+                    color: "var(--color-text-dim)",
+                    textShadow: "1px 1px 0px oklch(0.08 0.005 55)",
+                  }}
+                >
+                  {s.category} &middot; {s.dims}
+                </span>
+              </div>
+            ))}
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+  );
+}
+
+/* ===== QUICK START ===== */
+
+function QuickStartSection() {
+  return (
+    <section id="quickstart" className="relative py-24 sm:py-32">
+      <div className="max-w-5xl mx-auto px-6">
+        <FadeUp>
+          <span className="section-label block mb-4">Quick start</span>
+          <h2 className="section-heading mb-16">Four commands to go</h2>
+        </FadeUp>
+
+        <div className="grid grid-cols-1 gap-12 max-w-xl">
+          {QUICKSTART_STEPS.map((step, i) => (
+            <FadeUp key={step.title} delay={Math.min(i + 1, 3) as 1 | 2 | 3}>
+              <div className="flex gap-6 items-start">
+                <span className="step-number">{i + 1}</span>
+                <div className="flex-1 pt-1">
+                  <h3 className="feature-title mb-3">{step.title}</h3>
+                  <div className="terminal-block">
+                    <span className="terminal-prompt">$ </span>
+                    <span className="terminal-command">{step.command}</span>
+                  </div>
+                </div>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+
+        {/* Prerequisites note */}
+        <FadeUp>
+          <div className="mt-16 max-w-xl">
+            <span className="section-label block mb-4">Prerequisites</span>
+            <div className="terminal-block">
+              <div><span className="terminal-comment">{"# Required"}</span></div>
+              <div><span className="terminal-command">Java 21+</span><span className="terminal-comment">  brew install openjdk@21</span></div>
+              <div><span className="terminal-command">tmux 3.x+</span><span className="terminal-comment">  brew install tmux</span></div>
+              <div><span className="terminal-command">Python 3.12+</span><span className="terminal-comment">  brew install python@3.12</span></div>
+              <div><span className="terminal-command">Node.js 18+</span><span className="terminal-comment">  brew install node</span></div>
+              <div className="mt-2"><span className="terminal-comment">{"# Run minecraft-code doctor to check"}</span></div>
+            </div>
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+  );
+}
+
+/* ===== FOOTER ===== */
+
+function Footer() {
+  return (
+    <footer
+      className="py-16 sm:py-24"
+      style={{
+        background: "var(--color-surface)",
+        borderTop: "2px solid var(--color-border)",
+      }}
+    >
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="flex flex-col sm:flex-row justify-between gap-12">
+          {/* Left */}
+          <div className="max-w-xs">
+            <h3
+              className="mb-4"
+              style={{
+                fontFamily: "var(--font-mc-title)",
+                fontSize: "20px",
+                color: "var(--color-text-accent)",
+                textShadow: "2px 2px 0px oklch(0.10 0.01 55)",
+                letterSpacing: "2px",
+              }}
+            >
+              MINECRAFT CODE
+            </h3>
+            <p className="feature-desc" style={{ lineHeight: 1.8 }}>
+              Claude Code, inside Minecraft. Open source under the MIT license.
+            </p>
+          </div>
+
+          {/* Links */}
+          <div className="flex gap-16">
+            <div>
+              <span className="section-label block mb-4">Project</span>
+              <div className="flex flex-col gap-3">
+                <a href="https://github.com/Cheggin/minecraft-code" target="_blank" rel="noopener noreferrer" className="nav-link">GitHub</a>
+                <a href="https://www.npmjs.com/package/@reaganhsu/minecraft-code" target="_blank" rel="noopener noreferrer" className="nav-link">npm</a>
+                <a href="https://github.com/Cheggin/minecraft-code/issues" target="_blank" rel="noopener noreferrer" className="nav-link">Issues</a>
+                <a href="https://buymeacoffee.com/reaganhsu1b" target="_blank" rel="noopener noreferrer" className="nav-link" style={{ color: "var(--color-terracotta)" }}>Buy Me a Coffee</a>
+              </div>
+            </div>
+            <div>
+              <span className="section-label block mb-4">Stack</span>
+              <div className="flex flex-col gap-3">
+                <span className="nav-link" style={{ cursor: "default" }}>Fabric 1.21.1</span>
+                <span className="nav-link" style={{ cursor: "default" }}>Claude Code</span>
+                <span className="nav-link" style={{ cursor: "default" }}>Browser Use</span>
+                <span className="nav-link" style={{ cursor: "default" }}>Convex</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-between items-end w-full px-3 sm:px-4">
-          <span className="mc-version">Minecraft-Use v0.1.0</span>
-          <span className="mc-version opacity-60 hidden sm:inline">
-            Not affiliated with Mojang AB
+        {/* Bottom */}
+        <div
+          className="mt-16 pt-6 flex flex-col sm:flex-row justify-between gap-4"
+          style={{ borderTop: "1px solid var(--color-border)" }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-mc)",
+              fontSize: "10px",
+              color: "var(--color-text-dim)",
+              textShadow: "1px 1px 0px oklch(0.08 0.005 55)",
+            }}
+          >
+            Not affiliated with Mojang Studios or Microsoft
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--font-mc)",
+              fontSize: "10px",
+              color: "var(--color-text-dim)",
+              textShadow: "1px 1px 0px oklch(0.08 0.005 55)",
+            }}
+          >
+            Built by Reagan Hsu
           </span>
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ===== PAGE SHELL ===== */
-
-function PageShell({
-  title,
-  onBack,
-  children,
-}: {
-  title: string;
-  onBack: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="relative w-screen h-screen overflow-hidden select-none">
-      <img
-        src="/minecraft-bg.webp"
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ imageRendering: "auto", filter: "blur(3px) brightness(0.55)", transform: "scale(1.05)" }}
-      />
-      <div className="absolute inset-0 bg-black/30" />
-
-      <div className="relative z-10 flex flex-col h-full">
-        <div className="flex items-center justify-center px-6 pt-6 pb-4">
-          <h2
-            className="mc-title leading-none"
-            style={{ fontSize: "24px" }}
-          >
-            {title}
-          </h2>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
-          {children}
-        </div>
-
-        <div className="px-4 sm:px-6 py-4 sm:py-5 flex justify-center">
-          <McButton label="Done" onClick={onBack} style={{ minWidth: "min(400px, 80vw)" }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ===== PAGES ===== */
-
-function SchematicsPage() {
-  const schematics = useQuery(api.schematics.listSchematics, { count: 50 });
-
-  return (
-    <div className="flex flex-col items-center gap-6">
-      <p className="mc-page-text text-center">
-        Schematics found and downloaded by Claude appear here.
-      </p>
-      <div className="grid grid-cols-1 gap-3 w-full max-w-[620px]">
-        {schematics === undefined ? (
-          <p className="mc-page-text-dim text-center py-8">Loading...</p>
-        ) : schematics.length === 0 ? (
-          <p className="mc-page-text-dim text-center py-8">No schematics yet</p>
-        ) : (
-          schematics.map((s) => (
-            <SchematicCard
-              key={s._id}
-              name={s.name}
-              category={s.category ?? "Uncategorized"}
-              dimensions={s.dimensions}
-            />
-          ))
-        )}
-      </div>
-      <p className="mc-page-text-dim text-center text-xs mt-2">
-        Use /build &lt;name&gt; in-game to place a schematic
-      </p>
-    </div>
-  );
-}
-
-function CatalogPage() {
-  const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
-
-  const categories = useQuery(api.schematics.getCategories, {});
-
-  const searchResults = useQuery(
-    api.schematics.searchSchematics,
-    search.length > 0
-      ? {
-          query: search,
-          category: activeCategory !== "All" ? activeCategory : undefined,
-        }
-      : "skip"
-  );
-
-  const categoryResults = useQuery(
-    api.schematics.listByCategory,
-    activeCategory !== "All" && search.length === 0
-      ? { category: activeCategory }
-      : "skip"
-  );
-
-  const allResults = useQuery(
-    api.schematics.listSchematics,
-    activeCategory === "All" && search.length === 0
-      ? { count: 50 }
-      : "skip"
-  );
-
-  const displayItems = search.length > 0
-    ? searchResults
-    : activeCategory !== "All"
-      ? categoryResults
-      : allResults;
-
-  const allCategories = ["All", ...(categories ?? [])];
-
-  return (
-    <div className="flex flex-col items-center gap-6">
-      <div className="w-full max-w-[620px]">
-        <input
-          type="text"
-          placeholder="Search schematics..."
-          className="mc-input w-full"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
-      <div className="flex gap-2 flex-wrap justify-center">
-        {allCategories.map((cat) => (
-          <button
-            key={cat}
-            className={`mc-tag ${activeCategory === cat ? "mc-tag-active" : ""}`}
-            onClick={() => setActiveCategory(cat)}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 w-full max-w-[620px]">
-        {displayItems === undefined ? (
-          <p className="mc-page-text-dim text-center py-8">Loading...</p>
-        ) : displayItems.length === 0 ? (
-          <p className="mc-page-text-dim text-center py-8">No schematics found</p>
-        ) : (
-          displayItems.map((item) => (
-            <SchematicCard
-              key={item._id}
-              name={item.name}
-              category={item.category ?? "Uncategorized"}
-              dimensions={item.dimensions}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-function SettingsPage() {
-  return (
-    <div className="flex flex-col items-center gap-6 max-w-[620px] mx-auto">
-      <p className="mc-page-text text-center">
-        Settings are configured in-game via the mod.
-      </p>
-      <p className="mc-page-text-dim text-center">
-        This page is a placeholder — nothing here is wired up yet.
-      </p>
-    </div>
-  );
-}
-
-function AboutPage() {
-  const schematics = useQuery(api.schematics.listSchematics, { count: 200 });
-  const schematicCount = schematics?.length ?? 0;
-
-  return (
-    <div className="flex flex-col items-center gap-4 max-w-[620px] mx-auto">
-      <p className="mc-page-text text-center">
-        Use Claude Code inside Minecraft. Spawn villagers that
-        can code, browse the web, find schematics, and build
-        them in your world — all from in-game chat.
-      </p>
-      <div className="grid grid-cols-2 gap-2 w-full mt-2">
-        <button className="mc-btn">Version: 0.1.0</button>
-        <button className="mc-btn">Mod: Fabric 1.21.1</button>
-        <button className="mc-btn">AI: Claude Code</button>
-        <button className="mc-btn">Web: Browser Use</button>
-        <button className="mc-btn">Backend: Convex</button>
-        <button className="mc-btn">Schematics: {schematicCount}</button>
-      </div>
-      <p className="mc-page-text-dim text-center text-xs mt-2">
-        Not affiliated with Mojang Studios or Microsoft
-      </p>
-    </div>
-  );
-}
-
-/* ===== SHARED COMPONENTS ===== */
-
-function TitleLogo() {
-  return (
-    <div className="flex flex-col items-center">
-      <h1
-        className="mc-title font-bold leading-none"
-        style={{ fontSize: "clamp(40px, 12vw, 120px)" }}
-      >
-        MINECRAFT
-      </h1>
-      <span
-        className="mc-subtitle leading-none mt-1 sm:mt-2"
-        style={{ fontSize: "clamp(18px, 5vw, 56px)" }}
-      >
-        — USE —
-      </span>
-      <p
-        className="mt-2 sm:mt-4 text-center px-4"
-        style={{
-          fontFamily: "var(--font-minecraft)",
-          fontSize: "clamp(10px, 2.5vw, 14px)",
-          color: "#cccccc",
-          textShadow: "1px 1px 0px #3f3f3f",
-        }}
-      >
-        Claude Code, inside Minecraft
-      </p>
-    </div>
-  );
-}
-
-function McButton({
-  label,
-  wide,
-  half,
-  onClick,
-  style,
-}: {
-  label: string;
-  wide?: boolean;
-  half?: boolean;
-  onClick?: () => void;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <button
-      className={`mc-btn ${wide ? "w-full" : ""} ${half ? "mc-btn-half" : ""} flex items-center justify-center gap-2`}
-      onClick={onClick}
-      style={style}
-    >
-      {label}
-    </button>
-  );
-}
-
-function SchematicCard({
-  name,
-  category,
-  dimensions,
-}: {
-  name: string;
-  category: string;
-  dimensions?: { width: number; height: number; length: number };
-}) {
-  const dims = dimensions
-    ? `${dimensions.width}x${dimensions.height}x${dimensions.length}`
-    : "unknown";
-  const blocks = dimensions
-    ? dimensions.width * dimensions.height * dimensions.length
-    : 0;
-
-  return (
-    <div className="mc-card flex items-center gap-4">
-      <div className="mc-thumbnail flex items-center justify-center shrink-0">
-        <span style={{ fontSize: "20px" }}>
-          {category === "Castle"
-            ? "\u{1F3F0}"
-            : category === "House"
-              ? "\u{1F3E0}"
-              : category === "Tower"
-                ? "\u{1F5FC}"
-                : "\u{1F3DB}"}
-        </span>
-      </div>
-      <div className="flex flex-col gap-1 min-w-0">
-        <span className="mc-card-title truncate">{name}</span>
-        <span className="mc-card-meta">
-          {category} &middot; {dims} &middot; {blocks.toLocaleString()} blocks
-        </span>
-      </div>
-    </div>
+    </footer>
   );
 }
