@@ -1,16 +1,23 @@
 {
   "name": "@reaganhsu/minecraft-code",
   "version": "0.1.1",
-  "description": "Control Minecraft with AI agents — Claude Code, Browser Use, and more via tmux-bridge",
+  "description": "Turn Minecraft into a terminal for AI agents. Spawn Claude Code as a villager, find schematics on the web, and build them in your world — all from in-game chat.",
   "keywords": [
     "minecraft",
     "fabric",
     "claude",
+    "claude-code",
     "ai",
+    "ai-agent",
     "tmux",
     "browser-use",
     "llm",
-    "agent"
+    "agent",
+    "schematics",
+    "litematica",
+    "villager",
+    "coding",
+    "terminal"
   ],
   "homepage": "https://github.com/Cheggin/minecraft-use",
   "repository": {
