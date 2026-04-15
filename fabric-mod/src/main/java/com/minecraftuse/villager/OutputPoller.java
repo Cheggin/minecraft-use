@@ -40,14 +40,6 @@ public class OutputPoller {
             while (running.get()) {
                 try {
                     String raw = bridge.readWithColor(paneName).get();
-                    // Debug: log raw bytes
-                    StringBuilder hex = new StringBuilder();
-                    for (int di = 0; di < Math.min(100, raw.length()); di++) {
-                        hex.append(String.format("%02x ", (int) raw.charAt(di)));
-                    }
-                    com.minecraftuse.MinecraftUseMod.LOGGER.info("[OutputPoller] Raw hex (first 100): {}", hex);
-                    long escCount = raw.chars().filter(c -> c == 27).count();
-                    com.minecraftuse.MinecraftUseMod.LOGGER.info("[OutputPoller] ESC count: {}, total length: {}", escCount, raw.length());
                     String stripped = AnsiToMinecraft.convert(raw);
 
                     if (!stripped.equals(lastRaw)) {
@@ -60,17 +52,6 @@ public class OutputPoller {
                             .filter(line -> !isChromeLine(line))
                             .collect(java.util.stream.Collectors.toList());
                         lastLines.set(lines);
-                        // Debug: log if any lines contain §
-                        if (!lines.isEmpty()) {
-                            boolean has = lines.stream().anyMatch(l -> l.contains("§"));
-                            if (has) {
-                                com.minecraftuse.MinecraftUseMod.LOGGER.info("[OutputPoller] Lines with §: {}",
-                                    lines.stream().filter(l -> l.contains("§")).count() + "/" + lines.size());
-                            } else {
-                                com.minecraftuse.MinecraftUseMod.LOGGER.info("[OutputPoller] NO § codes in {} lines. Sample: {}",
-                                    lines.size(), lines.get(0).substring(0, Math.min(50, lines.get(0).length())));
-                            }
-                        }
 
                         // For floating text above head: only show the last agent response
                         // Use plain text (strip §) for detection, keep formatted for display
@@ -103,24 +84,15 @@ public class OutputPoller {
                             }
                         }
                         final List<String> floatingLines;
-                        String state;
                         if (agentLines.isEmpty() && lastLineIsUserPrompt) {
                             floatingLines = List.of("thinking...");
-                            state = "THINKING";
                         } else if (agentLines.isEmpty() && !lastDisplayedLines.isEmpty()) {
                             floatingLines = lastDisplayedLines;
-                            state = "KEEP_LAST";
                         } else if (agentLines.isEmpty()) {
                             floatingLines = Collections.emptyList();
-                            state = "EMPTY";
                         } else {
                             floatingLines = agentLines;
-                            state = "RESPONSE";
                         }
-                        com.minecraftuse.MinecraftUseMod.LOGGER.info(
-                            "[OutputPoller] state={} agentLines={} lastDisplayed={} lastLineIsPrompt={} totalLines={} floatingSize={}",
-                            state, agentLines.size(), lastDisplayedLines.size(), lastLineIsUserPrompt, lines.size(), floatingLines.size()
-                        );
                         // Play sound only on transition from empty/thinking to having a response
                         boolean wasEmpty = lastDisplayedLines.isEmpty();
                         boolean nowHasContent = !agentLines.isEmpty();

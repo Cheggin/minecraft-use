@@ -85,10 +85,8 @@ public class CatalogIndex {
         String file = getStringOrEmpty(obj, "fileName");
         String thumbnail = "";
         String sourceUrl = getStringOrEmpty(obj, "sourceUrl");
-        String fileUrl = getStringOrEmpty(obj, "fileUrl");
         double rating = obj.has("rating") ? obj.get("rating").getAsDouble() : 0.0;
         int downloads = obj.has("downloads") ? obj.get("downloads").getAsInt() : 0;
-        int fileSize = obj.has("fileSize") ? obj.get("fileSize").getAsInt() : 0;
 
         List<String> tags = new ArrayList<>();
         if (obj.has("tags") && obj.get("tags").isJsonArray()) {

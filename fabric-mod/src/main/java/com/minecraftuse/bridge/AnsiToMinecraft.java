@@ -97,7 +97,7 @@ public class AnsiToMinecraft {
         result.append(input, lastEnd, input.length());
 
         // Also strip any remaining non-color ANSI sequences (cursor movement, etc.)
-        return AnsiStripper.stripNonColor(result.toString());
+        return AnsiStripper.strip(result.toString());
     }
 
     /** Map 256-color index to nearest Minecraft § color */

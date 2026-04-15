@@ -7,7 +7,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
@@ -58,7 +57,6 @@ public class ListCommand {
                         String query = StringArgumentType.getString(context, "query");
                         FabricClientCommandSource source = context.getSource();
                         source.sendFeedback(Text.literal("§e[MCUse] §fSearching cached schematics for: " + query));
-                        // TODO: fuzzy search implementation
                         return 1;
                     }))
         );

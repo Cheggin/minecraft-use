@@ -44,7 +44,6 @@ public class CodeScreenGUI extends Screen {
     private MCEFBrowser browser;
     private final String url;
     private BrowserLayout browserLayout = BrowserLayout.empty();
-    private int renderCount = 0;
 
     public CodeScreenGUI(String url) {
         super(Text.literal("Code Screen"));
@@ -199,16 +198,6 @@ public class CodeScreenGUI extends Screen {
 
         if (browser != null) {
             MCEFRenderer renderer = browser.getRenderer();
-            if (renderCount < 5 || renderCount % 100 == 0) {
-                MinecraftUseMod.LOGGER.info(
-                    "[CodeScreen] render #{}: textureID={}, browserURL={}, panel={}",
-                    renderCount,
-                    renderer.getTextureID(),
-                    browser.getURL(),
-                    browserLayout
-                );
-            }
-            renderCount++;
             RenderSystem.disableDepthTest();
             RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
             RenderSystem.setShaderTexture(0, renderer.getTextureID());
@@ -309,11 +298,9 @@ public class CodeScreenGUI extends Screen {
         double previous = currentZoomLevel();
         double next = clampZoomLevel(previous + delta);
         if (Double.compare(previous, next) == 0) {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom unchanged at {} after delta {}", previous, delta);
             return;
         }
         browser.setZoomLevel(next);
-        MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom changed from {} to {} (delta {})", previous, next, delta);
     }
 
     static BrowserLayout computeBrowserLayout(int screenWidth, int screenHeight) {
@@ -368,11 +355,8 @@ public class CodeScreenGUI extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (browser != null && isInsideBrowser(mouseX, mouseY)) {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] mouseClicked x={}, y={}, button={}", mouseX, mouseY, button);
             browser.sendMousePress(scaledMouseX(mouseX), scaledMouseY(mouseY), button);
             browser.setFocus(true);
-        } else {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] mouseClicked outside browser x={}, y={}, button={}", mouseX, mouseY, button);
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
@@ -380,7 +364,6 @@ public class CodeScreenGUI extends Screen {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (browser != null && isInsideBrowser(mouseX, mouseY)) {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] mouseReleased x={}, y={}, button={}", mouseX, mouseY, button);
             browser.sendMouseRelease(scaledMouseX(mouseX), scaledMouseY(mouseY), button);
         }
         return super.mouseReleased(mouseX, mouseY, button);
@@ -397,13 +380,6 @@ public class CodeScreenGUI extends Screen {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         if (browser != null && isInsideBrowser(mouseX, mouseY)) {
-            MinecraftUseMod.LOGGER.info(
-                "[CodeScreen] mouseScrolled x={}, y={}, horizontal={}, vertical={}",
-                mouseX,
-                mouseY,
-                horizontalAmount,
-                verticalAmount
-            );
             browser.sendMouseWheel(scaledMouseX(mouseX), scaledMouseY(mouseY), verticalAmount, 0);
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
@@ -413,30 +389,24 @@ public class CodeScreenGUI extends Screen {
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         // Escape closes the screen — do not forward to browser
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] ESC pressed; closing screen for URL {}", url);
             close();
             return true;
         }
         if (isZoomInShortcut(keyCode, modifiers)) {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom-in shortcut pressed: keyCode={}, modifiers={}", keyCode, modifiers);
             adjustZoom(ZOOM_STEP);
             return true;
         }
         if (isZoomOutShortcut(keyCode, modifiers)) {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom-out shortcut pressed: keyCode={}, modifiers={}", keyCode, modifiers);
             adjustZoom(-ZOOM_STEP);
             return true;
         }
         if (isResetZoomShortcut(keyCode, modifiers)) {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom reset shortcut pressed: keyCode={}, modifiers={}", keyCode, modifiers);
             if (browser != null) {
                 browser.setZoomLevel(0.0D);
-                MinecraftUseMod.LOGGER.info("[CodeScreen] Zoom reset to default");
             }
             return true;
         }
         if (browser != null) {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] Forwarding keyPressed keyCode={}, scanCode={}, modifiers={}", keyCode, scanCode, modifiers);
             browser.sendKeyPress(keyCode, scanCode, modifiers);
             browser.setFocus(true);
         }
@@ -446,7 +416,6 @@ public class CodeScreenGUI extends Screen {
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
         if (browser != null && keyCode != GLFW.GLFW_KEY_ESCAPE) {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] Forwarding keyReleased keyCode={}, scanCode={}, modifiers={}", keyCode, scanCode, modifiers);
             browser.sendKeyRelease(keyCode, scanCode, modifiers);
         }
         return super.keyReleased(keyCode, scanCode, modifiers);
@@ -456,7 +425,6 @@ public class CodeScreenGUI extends Screen {
     public boolean charTyped(char chr, int modifiers) {
         if (chr == 0) return false;
         if (browser != null) {
-            MinecraftUseMod.LOGGER.info("[CodeScreen] Forwarding charTyped char='{}' ({}) modifiers={}", chr, (int) chr, modifiers);
             browser.sendKeyTyped(chr, modifiers);
             browser.setFocus(true);
         }

@@ -5,11 +5,9 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
 import java.io.File;
-import java.util.List;
 
 public class DespawnCommand {
 

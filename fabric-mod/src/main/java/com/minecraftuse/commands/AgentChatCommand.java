@@ -6,7 +6,6 @@ import com.minecraftuse.bridge.PaneConfig;
 import com.minecraftuse.bridge.TmuxBridge;
 import com.minecraftuse.villager.VillagerRegistry;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -167,7 +166,6 @@ public class AgentChatCommand {
     private static String waitForResponse(TmuxBridge bridge, String agentName) throws Exception {
         // Snapshot current state
         String beforeOutput = AnsiStripper.strip(bridge.read(agentName).get());
-        MinecraftUseMod.LOGGER.info("[AgentChat] Waiting for {} response. Before length: {}", agentName, beforeOutput.length());
 
         long startTime = System.currentTimeMillis();
         String lastOutput = "";
@@ -182,9 +180,7 @@ public class AgentChatCommand {
             if (current.equals(lastOutput) && !current.equals(beforeOutput)) {
                 stableCount++;
                 if (stableCount >= 3) {
-                    String resp = extractLastResponse(current);
-                    MinecraftUseMod.LOGGER.info("[AgentChat] Stable output for {}. Extracted: {}", agentName, resp != null ? resp.substring(0, Math.min(60, resp.length())) : "NULL");
-                    return resp;
+                    return extractLastResponse(current);
                 }
             } else {
                 stableCount = 0;
@@ -232,19 +228,6 @@ public class AgentChatCommand {
         // Remove the bullet character
         if (result.startsWith("●") || result.startsWith("⏺")) {
             result = result.substring(1).trim();
-        }
-        if (result.isEmpty()) {
-            // Debug: log what lines look like
-            for (int idx = Math.max(0, lines.length - 5); idx < lines.length; idx++) {
-                String debugLine = lines[idx].trim();
-                if (!debugLine.isEmpty()) {
-                    StringBuilder hexChars = new StringBuilder();
-                    for (int ci = 0; ci < Math.min(5, debugLine.length()); ci++) {
-                        hexChars.append(String.format("U+%04X ", (int) debugLine.charAt(ci)));
-                    }
-                    MinecraftUseMod.LOGGER.info("[AgentChat] Line {}: starts='{}' hex={}", idx, debugLine.substring(0, Math.min(20, debugLine.length())), hexChars);
-                }
-            }
         }
         return result.isEmpty() ? null : result;
     }

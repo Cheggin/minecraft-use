@@ -5,7 +5,6 @@ then verify the file can be stored in Convex.
 
 import asyncio
 import os
-import time
 from pathlib import Path
 
 from dotenv import load_dotenv

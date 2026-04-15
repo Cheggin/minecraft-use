@@ -7,14 +7,12 @@ Runs alongside Minecraft, handles:
 - Communication with the Fabric mod via HTTP on localhost:8765
 """
 
-import io
 import json
 import os
 import tempfile
 from pathlib import Path
 
 import sounddevice as sd
-import soundfile as sf
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
