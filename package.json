@@ -1,7 +1,7 @@
 {
   "name": "@reaganhsu/minecraft-code",
   "version": "0.1.2",
-  "description": "Turn Minecraft into a terminal for AI agents. Spawn Claude Code as a villager, find schematics on the web, and build them in your world — all from in-game chat.",
+  "description": "Turn Minecraft into a coding workstation. Spawn Claude Code as a villager, open VS Code in-game, find schematics on the web, and build them in your world — all from chat.",
   "keywords": [
     "minecraft",
     "fabric",

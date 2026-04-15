@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/@reaganhsu/minecraft-code)](https://www.npmjs.com/package/@reaganhsu/minecraft-code)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-orange)](https://buymeacoffee.com/reaganhsu1b)
 
-Turn Minecraft into a terminal interface for AI agents. Spawn Claude Code, Browser Use, or any CLI tool as Minecraft villagers that follow you around, display output above their heads, and respond to your messages.
+Turn Minecraft into a coding workstation. Spawn Claude Code as a villager, open VS Code in-game, find schematics on the web, and build them in your world — all from chat.
 
 ```
 /agent alex              → spawn Claude villager

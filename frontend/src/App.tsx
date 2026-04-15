@@ -311,9 +311,9 @@ function HeroSection({ splash }: { splash: string }) {
             padding: "16px 20px",
           }}
         >
-          Turn Minecraft into a terminal for AI agents. Spawn Claude Code
-          as a villager, find schematics on the web, and build
-          them in your world — all from in-game chat.
+          Turn Minecraft into a coding workstation. Spawn Claude Code
+          as a villager, open VS Code in-game, find schematics on
+          the web, and build them in your world — all from chat.
         </p>
 
         {/* Install command */}
