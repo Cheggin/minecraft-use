@@ -137,6 +137,11 @@ public class AgentDashboardScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+        // Don't render the default blur — we draw our own background
+    }
+
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         scrollOffset -= (int) verticalAmount * 20;
         scrollOffset = Math.max(0, scrollOffset);

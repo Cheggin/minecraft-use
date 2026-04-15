@@ -198,7 +198,7 @@ public class ProfileSoundManager {
         try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(mcmeta))) {
             pw.println("{");
             pw.println("  \"pack\": {");
-            pw.println("    \"pack_format\": 15,");
+            pw.println("    \"pack_format\": 34,");
             pw.println("    \"description\": \"minecraft-code profile sounds\"");
             pw.println("  }");
             pw.println("}");
