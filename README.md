@@ -86,6 +86,20 @@ tmux session "minecraft-code"
 | `/agent-tell <from> <to> <msg>` | One agent sends a message to another |
 | `/agent-chat <a1> <a2> <prompt>` | Multi-round conversation between agents |
 
+### Code Editor (VS Code in Minecraft)
+| Command | Description |
+|---------|-------------|
+| `/code` | Open VS Code (vscode.dev) in-game |
+| `/code repo` | Open the project repo in github.dev |
+| `/code server` | Open code-server at localhost:8080 |
+| `/code login` | Sign in to GitHub |
+| `/code <url>` | Open any URL in the browser |
+
+### Dashboard
+| Command | Description |
+|---------|-------------|
+| `/agents` | Open agent dashboard showing all active agents |
+
 ### Schematics
 | Command | Description |
 |---------|-------------|
