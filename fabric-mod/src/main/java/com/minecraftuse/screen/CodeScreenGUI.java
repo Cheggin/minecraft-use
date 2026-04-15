@@ -77,6 +77,68 @@ public class CodeScreenGUI extends Screen {
             browser = MCEF.createBrowser(url, false);
             // Disable cursor change listener to avoid GL cursor errors on macOS
             browser.setCursorChangeListener(cursor -> {});
+            // Get both client types
+            org.cef.CefClient cefClient = browser.getClient();
+            com.cinemamod.mcef.MCEFClient mcefClient = MCEF.getClient();
+            MinecraftUseMod.LOGGER.info("[CodeScreen] CefClient: {}, MCEFClient: {}",
+                cefClient != null ? cefClient.getClass().getName() : "null",
+                mcefClient != null ? mcefClient.getClass().getName() : "null");
+
+            // Handle popups via CefClient (has addLifeSpanHandler)
+            if (cefClient != null) {
+                cefClient.addLifeSpanHandler(new org.cef.handler.CefLifeSpanHandlerAdapter() {
+                @Override
+                public boolean onBeforePopup(org.cef.browser.CefBrowser cefBrowser,
+                        org.cef.browser.CefFrame frame, String targetUrl, String targetFrameName) {
+                    MinecraftUseMod.LOGGER.info("[CodeScreen] Popup requested: {}", targetUrl);
+                    MinecraftClient.getInstance().execute(() -> {
+                        if (browser != null) {
+                            browser.loadURL(targetUrl);
+                        }
+                    });
+                    return true;
+                }
+            });
+                MinecraftUseMod.LOGGER.info("[CodeScreen] LifeSpanHandler registered on CefClient");
+            }
+
+            // Override window.open on every page load via MCEFClient (has addLoadHandler)
+            if (mcefClient != null) {
+                mcefClient.addLoadHandler(new org.cef.handler.CefLoadHandlerAdapter() {
+                @Override
+                public void onLoadStart(org.cef.browser.CefBrowser cefBrowser, org.cef.browser.CefFrame frame,
+                        org.cef.network.CefRequest.TransitionType transitionType) {
+                    if (frame.isMain()) {
+                        MinecraftUseMod.LOGGER.info("[CodeScreen] Page loading: {}", frame.getURL());
+                        cefBrowser.executeJavaScript(
+                            "window.open = function(url, target, features) { " +
+                            "  console.log('[MC] window.open intercepted: ' + url); " +
+                            "  if(url) { window.location.href = url; } " +
+                            "  return window; " +
+                            "};",
+                            frame.getURL(), 0
+                        );
+                    }
+                }
+
+                @Override
+                public void onLoadEnd(org.cef.browser.CefBrowser cefBrowser, org.cef.browser.CefFrame frame, int httpStatusCode) {
+                    if (frame.isMain()) {
+                        MinecraftUseMod.LOGGER.info("[CodeScreen] Page loaded: {} (status {})", frame.getURL(), httpStatusCode);
+                        // Re-inject after load in case scripts overwrote it
+                        cefBrowser.executeJavaScript(
+                            "window.open = function(url, target, features) { " +
+                            "  console.log('[MC] window.open intercepted: ' + url); " +
+                            "  if(url) { window.location.href = url; } " +
+                            "  return window; " +
+                            "};",
+                            frame.getURL(), 0
+                        );
+                    }
+                }
+                });
+                MinecraftUseMod.LOGGER.info("[CodeScreen] LoadHandler registered on MCEFClient");
+            }
             MinecraftUseMod.LOGGER.info("[CodeScreen] Browser created: {}", browser != null);
         }
         resizeBrowser();
@@ -183,15 +245,18 @@ public class CodeScreenGUI extends Screen {
         int zoomHintWidth = textRenderer.getWidth(ZOOM_HINT);
         String zoomLabel = String.format(Locale.ROOT, "%.1fx", zoomFactorForDisplay(currentZoomLevel()));
         int zoomLabelWidth = textRenderer.getWidth(zoomLabel);
+        int closeHintWidth = textRenderer.getWidth(CLOSE_HINT);
         context.drawText(textRenderer, Text.literal(CLOSE_HINT), urlX, urlY, URL_BAR_LABEL_COLOR, false);
-        context.drawText(
-            textRenderer,
-            Text.literal(url),
-            browserLayout.panelLeft() + Math.max(8, (browserLayout.panelWidth() - textRenderer.getWidth(url)) / 2),
-            urlY,
-            URL_BAR_TEXT_COLOR,
-            false
-        );
+        // Truncate URL to fit between close hint and zoom hint
+        int availableWidth = browserLayout.panelWidth() - closeHintWidth - zoomHintWidth - zoomLabelWidth - URL_BAR_PADDING * 6;
+        String displayUrl = url;
+        while (textRenderer.getWidth(displayUrl) > availableWidth && displayUrl.length() > 10) {
+            displayUrl = displayUrl.substring(0, displayUrl.length() - 1);
+        }
+        if (displayUrl.length() < url.length()) displayUrl += "...";
+        int urlCenterX = browserLayout.panelLeft() + closeHintWidth + URL_BAR_PADDING * 2 +
+            (availableWidth - textRenderer.getWidth(displayUrl)) / 2;
+        context.drawText(textRenderer, Text.literal(displayUrl), urlCenterX, urlY, URL_BAR_TEXT_COLOR, false);
         context.drawText(
             textRenderer,
             Text.literal(ZOOM_HINT),

@@ -143,6 +143,7 @@ public class ProfileSoundManager {
         if (!spawnSounds.isEmpty() || deathSound != null) {
             writeSoundsJson(packRoot);
             writePackMcmeta(packRoot);
+            enableResourcePack(runDir);
             LOGGER.info("ProfileSoundManager: {} spawn sounds, death={}", spawnSounds.size(), deathSound != null);
         }
     }
@@ -203,6 +204,28 @@ public class ProfileSoundManager {
             pw.println("}");
         } catch (IOException e) {
             LOGGER.error("Failed to write pack.mcmeta", e);
+        }
+    }
+
+    private static void enableResourcePack(Path runDir) {
+        Path optionsFile = runDir.resolve("options.txt");
+        if (!Files.exists(optionsFile)) return;
+        try {
+            String content = Files.readString(optionsFile);
+            String packEntry = "file/" + RESOURCE_PACK_NAME;
+            if (content.contains(packEntry)) {
+                LOGGER.info("Resource pack already enabled in options.txt");
+                return;
+            }
+            // Add our pack to the resourcePacks list
+            content = content.replaceFirst(
+                "resourcePacks:\\[",
+                "resourcePacks:[\"" + packEntry + "\","
+            );
+            Files.writeString(optionsFile, content);
+            LOGGER.info("Auto-enabled resource pack '{}' in options.txt", RESOURCE_PACK_NAME);
+        } catch (IOException e) {
+            LOGGER.warn("Failed to auto-enable resource pack in options.txt: {}", e.getMessage());
         }
     }
 
