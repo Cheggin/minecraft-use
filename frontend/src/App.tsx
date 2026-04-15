@@ -25,25 +25,25 @@ const NAV_LINKS = [
 const FEATURES = [
   {
     title: "Spawn AI Agents",
-    desc: "Summon Claude Code as a Minecraft villager. It follows you around, displays output above its head with full ANSI color rendering, and responds to your chat messages.",
+    desc: "Summon Claude Code as a Minecraft villager. It follows you, shows responses above its head, and answers when you talk to it.",
     command: "/agent alex",
     output: "Spawned librarian villager \"alex\" running Claude Code",
   },
   {
     title: "Find Schematics Online",
-    desc: "Browser Use searches schematic sites for you. It finds builds, downloads the .litematica files, and stores them in your Convex database — ready to place in your world.",
+    desc: "Browser Use searches the web for you. It finds builds, downloads them, and saves them — ready to place in your world.",
     command: "/browser-use get-schematics castle",
     output: "Searching minecraft-schematics.com... Found 12 results",
   },
   {
     title: "Agent-to-Agent Chat",
-    desc: "Your agents can talk to each other. Have them debate, review code, or collaborate on tasks — all visible as floating text in your world.",
+    desc: "Your agents can talk to each other. Have them debate, review code, or pair program — visible as floating text above their heads.",
     command: '/agent-chat alex rex "debate rust vs python"',
     output: "Starting multi-round conversation between alex and rex",
   },
   {
     title: "Build from the Web",
-    desc: "Download schematics from the web and place them in your world. The full pipeline: search, download, store in Convex, load in Litematica.",
+    desc: "Download schematics from the web and place them in your world with one command.",
     command: "/build castle",
     output: "Downloaded castle.litematica — open Litematica (M+C) to place",
   },
@@ -311,9 +311,9 @@ function HeroSection({ splash }: { splash: string }) {
             padding: "16px 20px",
           }}
         >
-          Turn Minecraft into a coding workstation. Spawn Claude Code
-          as a villager, open VS Code in-game, find schematics on
-          the web, and build them in your world — all from chat.
+          Turn Minecraft into a dev environment. Spawn Claude Code
+          as a villager. Open VS Code in-game. Find schematics
+          and build them in your world — all from chat.
         </p>
 
         {/* Install command */}
@@ -354,7 +354,7 @@ function HeroSection({ splash }: { splash: string }) {
             textShadow: "1px 1px 0px oklch(0.10 0.005 55)",
           }}
         >
-          v0.1.1 &middot; Fabric 1.21.1 &middot; MIT License
+          v0.1.3 &middot; Fabric 1.21.1 &middot; MIT License
         </p>
       </div>
 
@@ -382,7 +382,7 @@ function FeaturesSection() {
       <div className="max-w-5xl mx-auto px-6">
         <FadeUp>
           <span className="section-label block mb-4">What it does</span>
-          <h2 className="section-heading mb-16">Your Minecraft world,<br />now with AI agents</h2>
+          <h2 className="section-heading mb-16">Your Minecraft world<br />runs code now</h2>
         </FadeUp>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
@@ -419,9 +419,8 @@ function CommandsSection() {
           <span className="section-label block mb-4">Commands</span>
           <h2 className="section-heading mb-6">Everything from chat</h2>
           <p className="feature-desc mb-12" style={{ maxWidth: "55ch" }}>
-            No GUI needed. Every feature is a chat command. Type it in Minecraft,
-            the mod sends it to the right tmux pane, and the response appears
-            above your villager's head.
+            No GUI needed. Every feature is a chat command.
+            Type it, get a response above your villager's head.
           </p>
         </FadeUp>
 
@@ -573,9 +572,8 @@ function SchematicsSection() {
           <span className="section-label block mb-4">Schematics</span>
           <h2 className="section-heading mb-6">Build from the web</h2>
           <p className="feature-desc mb-12" style={{ maxWidth: "55ch" }}>
-            Ask Claude to find schematics online. They get downloaded, stored in
-            your Convex database, and are ready to place in your world
-            via Litematica.
+            Ask an agent to find schematics online. They get downloaded
+            and are ready to place in your world.
           </p>
         </FadeUp>
 
