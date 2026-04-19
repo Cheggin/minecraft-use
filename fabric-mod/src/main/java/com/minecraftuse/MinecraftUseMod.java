@@ -13,12 +13,14 @@ import com.minecraftuse.commands.ListCommand;
 import com.minecraftuse.commands.ListenCommand;
 import com.minecraftuse.commands.ShellCommand;
 import com.minecraftuse.commands.SpawnCommand;
+import com.minecraftuse.commands.SpotifyCommand;
 import com.minecraftuse.commands.TmuxReadCommand;
 import com.minecraftuse.commands.TmuxSendCommand;
 import com.minecraftuse.commands.UndoCommand;
 import com.minecraftuse.gui.CatalogScreen;
 import com.minecraftuse.ProfileSoundManager;
 import com.minecraftuse.network.SidecarClient;
+import com.minecraftuse.network.SpotifyClient;
 import com.minecraftuse.villager.VillagerInteractionHandler;
 import com.minecraftuse.villager.VillagerRegistry;
 import net.fabricmc.api.ClientModInitializer;
@@ -36,6 +38,7 @@ public class MinecraftUseMod implements ClientModInitializer {
     public static final String MOD_ID = "minecraft-use";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static final SidecarClient SIDECAR = new SidecarClient("http://localhost:8765");
+    public static final SpotifyClient SPOTIFY = new SpotifyClient("http://localhost:8765");
 
     private static KeyBinding openCatalogKey;
 
@@ -59,6 +62,7 @@ public class MinecraftUseMod implements ClientModInitializer {
             ListenCommand.register(dispatcher);
             ShellCommand.register(dispatcher);
             SpawnCommand.register(dispatcher);
+            SpotifyCommand.register(dispatcher);
             TmuxSendCommand.register(dispatcher);
             TmuxReadCommand.register(dispatcher);
             UndoCommand.register(dispatcher);
@@ -82,6 +86,7 @@ public class MinecraftUseMod implements ClientModInitializer {
             VillagerRegistry.getInstance().tickAll();
             CodeCommand.tick(client);
             AgentsCommand.tick(client);
+            SpotifyCommand.tick(client);
         });
 
         LOGGER.info("Minecraft Use mod initialized — commands and keybinds registered");
