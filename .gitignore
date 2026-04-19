@@ -24,6 +24,7 @@ sidecar/schema_cache/*.nbt
 
 # Environment
 .env
+sidecar/.spotify-token.json
 
 # Tool configs
 .omc/
