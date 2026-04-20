@@ -13,6 +13,7 @@ Turn Minecraft into a coding workstation. Spawn Claude Code as a villager, open 
 /build 27283             → place schematic via Litematica
 /agent-tell alex shawn "review this" → agents talk to each other
 /spotify                 → open the in-game Spotify jukebox
+/mail                    → open the in-game email client
 ```
 
 ## Quick Start
@@ -125,6 +126,22 @@ A Minecraft-styled UI that controls your Spotify via the Web API. Music discs re
 
 **Requires Spotify Premium** for playback control via the Web API.
 
+### Mailbox
+| Command | Description |
+|---------|-------------|
+| `/mail` | Open the in-game email client |
+
+A Minecraft-styled email client that reads your Gmail (or any IMAP inbox) and lets you browse, read, reply, and compose without leaving the game. Written books stand in for email icons; a parchment-warm accent replaces Spotify-green.
+
+- **Inbox** — 25 most recent, with sender / subject / relative date. Auto-refreshes every 30 s.
+- **Detail view** — click a row → full plain-text body (HTML stripped). URLs are underlined and clickable (opens in your browser with MC's standard confirm-prompt).
+- **Actions** — Mark read/unread, Archive (moves to All Mail), Trash, Reply.
+- **Compose** — new message from the inbox toolbar, or prefilled as a quoted reply from the detail view.
+- **Fuzzy filter** — the persistent search bar filters the loaded rows locally (same subsequence matcher as the Spotify tabs).
+- **In-process** — IMAP/SMTP run inside the mod via bundled Jakarta Mail. No Python sidecar needed for `/mail`.
+
+**Auth**: app password, not OAuth. See [Setup Guide → Step 6](#6-mail-optional-for-mail) below.
+
 ## Agent Villagers
 
 Spawn AI agents as Minecraft mobs that follow you around:
@@ -226,6 +243,28 @@ Spotify Premium is required for playback control via the Web API.
    SPOTIFY_REDIRECT_URI=http://127.0.0.1:8765/spotify/auth/callback
    ```
 4. In Minecraft, run `/spotify` and click **Sign in to Spotify** — your browser opens, you approve, the GUI auto-detects when the token is saved (~1s). The token persists in `sidecar/.spotify-token.json` and refreshes itself.
+
+### 6. Mail (optional, for `/mail`)
+
+The mail client uses IMAP + SMTP via an **app password**, not OAuth. Works with Gmail, Outlook, iCloud, Fastmail, or any IMAP host — defaults assume Gmail.
+
+1. Turn on 2-Step Verification on your Google account if it isn't already: [myaccount.google.com/signinoptions/two-step-verification](https://myaccount.google.com/signinoptions/two-step-verification)
+2. Generate an app password: [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) → enter any name (e.g. `minecraft-mail`) → **Create** → copy the 16-char password.
+3. Add to `.env`:
+   ```env
+   GMAIL_ADDRESS=you@gmail.com
+   GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
+   ```
+4. In Minecraft, run `/mail`. The inbox loads in ~1 s after the first IMAP handshake.
+
+**Different provider?** Override any of these in `.env`:
+```env
+IMAP_HOST=imap.yourhost.com        # default: imap.gmail.com
+SMTP_HOST=smtp.yourhost.com        # default: smtp.gmail.com
+SMTP_PORT=587                       # default: 587
+MAIL_ARCHIVE_FOLDER=[Gmail]/All Mail  # where Archive sends messages
+MAIL_TRASH_FOLDER=[Gmail]/Trash       # where Trash sends messages
+```
 
 ## CLI
 
