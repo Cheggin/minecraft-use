@@ -12,7 +12,9 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -158,6 +160,7 @@ public final class MailService {
             if (m == null) throw new MessagingException("message " + uid + " not found");
 
             String body = extractBody(m);
+            List<Attachment> atts = extractAttachments(m);
             return new EmailDetail(
                 uid,
                 headerFrom(m),
@@ -165,8 +168,109 @@ public final class MailService {
                 safe(m.getSubject(), "(no subject)"),
                 Instant.ofEpochMilli(m.getSentDate() != null ? m.getSentDate().getTime() : 0).toString(),
                 body,
-                m.isSet(Flags.Flag.SEEN));
+                m.isSet(Flags.Flag.SEEN),
+                atts);
         });
+    }
+
+    public synchronized File downloadAttachment(long uid, String filename) throws MessagingException, IOException {
+        try {
+            return withRetry(() -> {
+                try {
+                    return downloadAttachmentImpl(uid, filename);
+                } catch (IOException e) {
+                    throw new MessagingException(e.getMessage(), e);
+                }
+            });
+        } catch (MessagingException e) {
+            if (e.getCause() instanceof IOException ioe) throw ioe;
+            throw e;
+        }
+    }
+
+    private File downloadAttachmentImpl(long uid, String filename) throws MessagingException, IOException {
+        IMAPFolder f = openInbox();
+        Message m = f.getMessageByUID(uid);
+        if (m == null) throw new MessagingException("message " + uid + " not found");
+        BodyPart part = findAttachmentPart(m, filename);
+        if (part == null) throw new IOException("attachment not found: " + filename);
+
+        File outDir = new File(System.getProperty("user.home"), "Downloads/mailbox");
+        if (!outDir.exists() && !outDir.mkdirs()) {
+            throw new IOException("could not create " + outDir);
+        }
+        File out = new File(outDir, sanitize(filename));
+        // Avoid clobbering: if target exists, append a counter.
+        if (out.exists()) {
+            String base = out.getName();
+            int dot = base.lastIndexOf('.');
+            String stem = dot > 0 ? base.substring(0, dot) : base;
+            String ext = dot > 0 ? base.substring(dot) : "";
+            int n = 1;
+            while (out.exists()) {
+                out = new File(outDir, stem + "-" + n + ext);
+                n++;
+            }
+        }
+        try (InputStream in = part.getInputStream();
+             FileOutputStream os = new FileOutputStream(out)) {
+            in.transferTo(os);
+        }
+        return out;
+    }
+
+    private static BodyPart findAttachmentPart(Part p, String filename) throws MessagingException, IOException {
+        Object content = p.getContent();
+        if (!(content instanceof MimeMultipart)) return null;
+        MimeMultipart mp = (MimeMultipart) content;
+        for (int i = 0; i < mp.getCount(); i++) {
+            BodyPart part = mp.getBodyPart(i);
+            String disp = part.getDisposition();
+            String fn = part.getFileName();
+            if (fn != null && filename.equals(fn)
+                    && (Part.ATTACHMENT.equalsIgnoreCase(disp) || Part.INLINE.equalsIgnoreCase(disp))) {
+                return part;
+            }
+            // Recurse into nested multipart
+            if (part.getContent() instanceof MimeMultipart) {
+                BodyPart nested = findAttachmentPart(part, filename);
+                if (nested != null) return nested;
+            }
+        }
+        return null;
+    }
+
+    private static List<Attachment> extractAttachments(Part p) {
+        List<Attachment> out = new ArrayList<>();
+        try {
+            Object content = p.getContent();
+            if (!(content instanceof MimeMultipart)) return out;
+            MimeMultipart mp = (MimeMultipart) content;
+            for (int i = 0; i < mp.getCount(); i++) {
+                BodyPart part = mp.getBodyPart(i);
+                String disp = part.getDisposition();
+                String fn = part.getFileName();
+                boolean isAttachment = Part.ATTACHMENT.equalsIgnoreCase(disp)
+                    || (Part.INLINE.equalsIgnoreCase(disp) && fn != null);
+                if (isAttachment && fn != null) {
+                    String ct = part.getContentType();
+                    if (ct != null) {
+                        int semi = ct.indexOf(';');
+                        if (semi > 0) ct = ct.substring(0, semi).trim();
+                    }
+                    out.add(new Attachment(fn, ct == null ? "application/octet-stream" : ct, part.getSize()));
+                }
+                if (part.getContent() instanceof MimeMultipart) {
+                    out.addAll(extractAttachments(part));
+                }
+            }
+        } catch (IOException | MessagingException ignored) {}
+        return out;
+    }
+
+    private static String sanitize(String filename) {
+        // Strip path separators and null bytes to prevent directory traversal
+        return filename.replaceAll("[\\\\/\\x00]", "_");
     }
 
     public synchronized void markRead(long uid, boolean read) throws MessagingException {
@@ -430,5 +534,7 @@ public final class MailService {
 
     public record EmailDetail(long uid, String from, String to,
                                String subject, String date, String body,
-                               boolean read) {}
+                               boolean read, List<Attachment> attachments) {}
+
+    public record Attachment(String filename, String contentType, long size) {}
 }

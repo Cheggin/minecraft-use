@@ -74,6 +74,25 @@ public class MailClient {
             o.addProperty("date", d.date());
             o.addProperty("body", d.body());
             o.addProperty("read", d.read());
+            JsonArray atts = new JsonArray();
+            for (MailService.Attachment a : d.attachments()) {
+                JsonObject ao = new JsonObject();
+                ao.addProperty("filename", a.filename());
+                ao.addProperty("content_type", a.contentType());
+                ao.addProperty("size", a.size());
+                atts.add(ao);
+            }
+            o.add("attachments", atts);
+            return o;
+        });
+    }
+
+    public CompletableFuture<JsonObject> downloadAttachment(long uid, String filename) {
+        return async(() -> {
+            java.io.File f = MailService.get().downloadAttachment(uid, filename);
+            JsonObject o = new JsonObject();
+            o.addProperty("ok", true);
+            o.addProperty("path", f.getAbsolutePath());
             return o;
         });
     }

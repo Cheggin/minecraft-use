@@ -51,6 +51,7 @@ public class MailScreen extends Screen {
     private static final int LABEL_COLOR = 0xFFAAAA00;
 
     private static final int BODY_LINE_HEIGHT = 10;
+    private static final int ATTACH_ROW_HEIGHT = 14;
 
     private static final Pattern URL_PATTERN = Pattern.compile(
         "https?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+",
@@ -84,6 +85,7 @@ public class MailScreen extends Screen {
 
     private EmailDetail detail = null;
     private List<String> detailWrappedBody = List.of();
+    private List<AttachmentRow> detailAttachments = new ArrayList<>();
     private int detailScroll = 0;
     private boolean inboxLoaded = false;
 
@@ -255,6 +257,17 @@ public class MailScreen extends Screen {
                 return;
             }
             detail = EmailDetail.from(json);
+            detailAttachments = new ArrayList<>();
+            if (json.has("attachments")) {
+                JsonArray arr = json.getAsJsonArray("attachments");
+                for (int i = 0; i < arr.size(); i++) {
+                    JsonObject a = arr.get(i).getAsJsonObject();
+                    detailAttachments.add(new AttachmentRow(
+                        a.has("filename") ? a.get("filename").getAsString() : "attachment",
+                        a.has("content_type") ? a.get("content_type").getAsString() : "",
+                        a.has("size") ? a.get("size").getAsLong() : 0));
+                }
+            }
             detailScroll = 0;
             rewrapDetailBody();
             applyDetailVisibility();
@@ -270,9 +283,27 @@ public class MailScreen extends Screen {
         });
     }
 
+    private void downloadAttachment(AttachmentRow att) {
+        if (detail == null) return;
+        statusText = "Downloading " + att.filename + "\u2026";
+        long uid = detail.uid;
+        client.downloadAttachment(uid, att.filename).thenAccept(json -> MinecraftClient.getInstance().execute(() -> {
+            if (json == null || json.has("error")) {
+                statusText = "Download failed";
+                return;
+            }
+            String path = json.has("path") ? json.get("path").getAsString() : "(unknown)";
+            statusText = "Saved: " + path;
+        })).exceptionally(err -> {
+            MinecraftClient.getInstance().execute(() -> statusText = "Download failed");
+            return null;
+        });
+    }
+
     private void exitDetail() {
         detail = null;
         detailWrappedBody = List.of();
+        detailAttachments = new ArrayList<>();
         detailScroll = 0;
         applyDetailVisibility();
         refreshInbox();
@@ -426,7 +457,29 @@ public class MailScreen extends Screen {
         // through to super — don't intercept anything as a list / URL click.
         if (composing) return super.mouseClicked(mouseX, mouseY, button);
 
-        // URL clicks in the detail body
+        // Attachment row clicks
+        if (detail != null && button == 0 && !detailAttachments.isEmpty()) {
+            int ph = panelHeight();
+            int panelX = (width - panelWidth()) / 2;
+            int panelY = (height - ph) / 2;
+            int bodyX = panelX + PADDING + 8;
+            int bodyY = panelY + LIST_Y + 54 + 6;
+            int bodyW = panelWidth() - PADDING * 2 - 16;
+            int attachH = attachmentsSectionHeight();
+            int bodyH = panelY + ph - PADDING - bodyY - (attachH + 4);
+            int attX = bodyX;
+            int attY = bodyY + bodyH + 4;
+            if (mouseX >= attX + 4 && mouseX < attX + bodyW - 4
+                    && mouseY >= attY + 16 && mouseY < attY + attachH) {
+                int idx = (int)((mouseY - (attY + 16)) / ATTACH_ROW_HEIGHT);
+                if (idx >= 0 && idx < detailAttachments.size()) {
+                    downloadAttachment(detailAttachments.get(idx));
+                    return true;
+                }
+            }
+        }
+
+        // URL clicks in the detail body (region shrinks if attachments present)
         if (detail != null && button == 0 && !detailWrappedBody.isEmpty()) {
             int ph = panelHeight();
             int panelX = (width - panelWidth()) / 2;
@@ -434,7 +487,9 @@ public class MailScreen extends Screen {
             int bodyX = panelX + PADDING + 8;
             int bodyY = panelY + LIST_Y + 54 + 6;
             int bodyW = panelWidth() - PADDING * 2 - 16;
-            int bodyH = panelY + ph - PADDING - bodyY;
+            int attachH = attachmentsSectionHeight();
+            int bodyH = panelY + ph - PADDING - bodyY
+                - (attachH == 0 ? 0 : attachH + 4);
             int textLeft = bodyX + 8;
             int textTop = bodyY + 8;
             int textRight = bodyX + bodyW - 8;
@@ -698,11 +753,13 @@ public class MailScreen extends Screen {
         context.drawText(textRenderer, Text.literal(dateLine),
             textX, headerY + 32, MUTED_COLOR, false);
 
-        // Body card
+        // Body card — shrunk if attachments are present so they render below
         int bodyX = headerX;
         int bodyY = headerY + headerH + 6;
         int bodyW = headerW;
-        int bodyH = panelY + panelHeight() - PADDING - bodyY;
+        int attachH = attachmentsSectionHeight();
+        int bodyH = panelY + panelHeight() - PADDING - bodyY
+            - (attachH == 0 ? 0 : attachH + 4);
         context.fill(bodyX - 1, bodyY - 1, bodyX + bodyW + 1, bodyY + bodyH + 1, CARD_BORDER);
         context.fill(bodyX, bodyY, bodyX + bodyW, bodyY + bodyH, CARD_COLOR);
 
@@ -714,25 +771,69 @@ public class MailScreen extends Screen {
         if (detailWrappedBody.isEmpty()) {
             context.drawText(textRenderer, Text.literal("(empty body)"),
                 textLeft, textTop, MUTED_COLOR, false);
-            return;
+        } else {
+            int maxScroll = Math.max(0, detailWrappedBody.size() - linesFit);
+            int scroll = Math.min(detailScroll, maxScroll);
+            for (int i = 0; i < linesFit && (i + scroll) < detailWrappedBody.size(); i++) {
+                String line = detailWrappedBody.get(i + scroll);
+                context.drawText(textRenderer, styleLine(line),
+                    textLeft, textTop + i * BODY_LINE_HEIGHT, TEXT_COLOR, false);
+            }
+            if (detailWrappedBody.size() > linesFit) {
+                String ind = (scroll + 1) + "\u2013"
+                    + Math.min(scroll + linesFit, detailWrappedBody.size())
+                    + " / " + detailWrappedBody.size();
+                context.drawText(textRenderer, Text.literal(ind),
+                    bodyX + bodyW - textRenderer.getWidth(ind) - 4,
+                    bodyY + bodyH - 12, MUTED_COLOR, false);
+            }
         }
 
-        int maxScroll = Math.max(0, detailWrappedBody.size() - linesFit);
-        int scroll = Math.min(detailScroll, maxScroll);
-        for (int i = 0; i < linesFit && (i + scroll) < detailWrappedBody.size(); i++) {
-            String line = detailWrappedBody.get(i + scroll);
-            context.drawText(textRenderer, styleLine(line),
-                textLeft, textTop + i * BODY_LINE_HEIGHT, TEXT_COLOR, false);
-        }
+        // Attachments section
+        if (attachH > 0) {
+            int attX = bodyX;
+            int attY = bodyY + bodyH + 4;
+            int attW = bodyW;
+            context.fill(attX - 1, attY - 1, attX + attW + 1, attY + attachH + 1, CARD_BORDER);
+            context.fill(attX, attY, attX + attW, attY + attachH, CARD_COLOR);
+            context.drawText(textRenderer, Text.literal("ATTACHMENTS"),
+                attX + 8, attY + 4, LABEL_COLOR, false);
 
-        if (detailWrappedBody.size() > linesFit) {
-            String ind = (scroll + 1) + "\u2013"
-                + Math.min(scroll + linesFit, detailWrappedBody.size())
-                + " / " + detailWrappedBody.size();
-            context.drawText(textRenderer, Text.literal(ind),
-                bodyX + bodyW - textRenderer.getWidth(ind) - 4,
-                bodyY + bodyH - 12, MUTED_COLOR, false);
+            for (int i = 0; i < detailAttachments.size(); i++) {
+                AttachmentRow a = detailAttachments.get(i);
+                int rowY = attY + 16 + i * ATTACH_ROW_HEIGHT;
+                boolean hover = mouseX >= attX + 4 && mouseX < attX + attW - 4
+                    && mouseY >= rowY && mouseY < rowY + ATTACH_ROW_HEIGHT;
+                if (hover) {
+                    context.fill(attX + 4, rowY, attX + attW - 4,
+                        rowY + ATTACH_ROW_HEIGHT, 0xFF2A2A45);
+                }
+                ItemStack attIcon = new ItemStack(Items.PAPER);
+                context.drawItem(attIcon, attX + 6, rowY - 1);
+
+                String line = truncate(a.filename, attW - 140) + "   " + formatSize(a.size);
+                context.drawText(textRenderer, Text.literal(line),
+                    attX + 26, rowY + 2, TEXT_COLOR, false);
+
+                String hint = hover ? "Click to download" : a.contentType;
+                int hw = textRenderer.getWidth(hint);
+                context.drawText(textRenderer, Text.literal(hint),
+                    attX + attW - hw - 8, rowY + 2,
+                    hover ? ACCENT : MUTED_COLOR, false);
+            }
         }
+    }
+
+    private int attachmentsSectionHeight() {
+        if (detailAttachments == null || detailAttachments.isEmpty()) return 0;
+        return 18 + detailAttachments.size() * ATTACH_ROW_HEIGHT + 4;
+    }
+
+    private static String formatSize(long bytes) {
+        if (bytes <= 0) return "? B";
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
     }
 
     // ---------- helpers ----------
@@ -872,6 +973,8 @@ public class MailScreen extends Screen {
             }
         }
     }
+
+    private record AttachmentRow(String filename, String contentType, long size) {}
 
     private static final class EmailDetail {
         long uid;
