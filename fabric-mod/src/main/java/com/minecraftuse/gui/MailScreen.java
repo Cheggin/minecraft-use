@@ -287,17 +287,51 @@ public class MailScreen extends Screen {
         if (detail == null) return;
         statusText = "Downloading " + att.filename + "\u2026";
         long uid = detail.uid;
+        com.minecraftuse.MinecraftUseMod.LOGGER.info(
+            "[mail] downloading attachment {} (uid={})", att.filename, uid);
+
         client.downloadAttachment(uid, att.filename).thenAccept(json -> MinecraftClient.getInstance().execute(() -> {
             if (json == null || json.has("error")) {
+                String err = json != null && json.has("body")
+                    ? json.get("body").getAsString() : "unknown error";
                 statusText = "Download failed";
+                com.minecraftuse.MinecraftUseMod.LOGGER.warn(
+                    "[mail] download failed for {}: {}", att.filename, err);
+                sendChat(Text.literal("§e[MCUse] §cDownload failed: ")
+                    .append(Text.literal(att.filename).formatted(Formatting.WHITE))
+                    .append(Text.literal(" — " + err).formatted(Formatting.GRAY)));
                 return;
             }
             String path = json.has("path") ? json.get("path").getAsString() : "(unknown)";
             statusText = "Saved: " + path;
+            com.minecraftuse.MinecraftUseMod.LOGGER.info(
+                "[mail] saved attachment to {}", path);
+
+            // Chat confirmation with a click-to-open on the path
+            Text pathText = Text.literal(path)
+                .styled(s -> s
+                    .withColor(Formatting.AQUA)
+                    .withUnderline(true)
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, path)));
+            sendChat(Text.literal("§e[MCUse] §aSaved attachment ")
+                .append(Text.literal(att.filename).formatted(Formatting.WHITE))
+                .append(Text.literal(" to "))
+                .append(pathText));
         })).exceptionally(err -> {
-            MinecraftClient.getInstance().execute(() -> statusText = "Download failed");
+            MinecraftClient.getInstance().execute(() -> {
+                statusText = "Download failed";
+                com.minecraftuse.MinecraftUseMod.LOGGER.warn(
+                    "[mail] download exception for " + att.filename, err);
+                sendChat(Text.literal("§e[MCUse] §cDownload failed: ")
+                    .append(Text.literal(att.filename).formatted(Formatting.WHITE)));
+            });
             return null;
         });
+    }
+
+    private static void sendChat(Text msg) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player != null) mc.player.sendMessage(msg, false);
     }
 
     private void exitDetail() {
