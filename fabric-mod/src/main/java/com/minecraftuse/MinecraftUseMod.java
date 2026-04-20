@@ -11,6 +11,7 @@ import com.minecraftuse.commands.DespawnCommand;
 import com.minecraftuse.commands.DownloadCommand;
 import com.minecraftuse.commands.ListCommand;
 import com.minecraftuse.commands.ListenCommand;
+import com.minecraftuse.commands.MailCommand;
 import com.minecraftuse.commands.ShellCommand;
 import com.minecraftuse.commands.SpawnCommand;
 import com.minecraftuse.commands.SpotifyCommand;
@@ -19,6 +20,7 @@ import com.minecraftuse.commands.TmuxSendCommand;
 import com.minecraftuse.commands.UndoCommand;
 import com.minecraftuse.gui.CatalogScreen;
 import com.minecraftuse.ProfileSoundManager;
+import com.minecraftuse.network.MailClient;
 import com.minecraftuse.network.SidecarClient;
 import com.minecraftuse.network.SpotifyClient;
 import com.minecraftuse.villager.VillagerInteractionHandler;
@@ -39,6 +41,7 @@ public class MinecraftUseMod implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static final SidecarClient SIDECAR = new SidecarClient("http://localhost:8765");
     public static final SpotifyClient SPOTIFY = new SpotifyClient("http://localhost:8765");
+    public static final MailClient MAIL = new MailClient("http://localhost:8765");
 
     private static KeyBinding openCatalogKey;
 
@@ -60,6 +63,7 @@ public class MinecraftUseMod implements ClientModInitializer {
             DownloadCommand.register(dispatcher);
             ListCommand.register(dispatcher);
             ListenCommand.register(dispatcher);
+            MailCommand.register(dispatcher);
             ShellCommand.register(dispatcher);
             SpawnCommand.register(dispatcher);
             SpotifyCommand.register(dispatcher);
@@ -87,6 +91,7 @@ public class MinecraftUseMod implements ClientModInitializer {
             CodeCommand.tick(client);
             AgentsCommand.tick(client);
             SpotifyCommand.tick(client);
+            MailCommand.tick(client);
         });
 
         LOGGER.info("Minecraft Use mod initialized — commands and keybinds registered");
