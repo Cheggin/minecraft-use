@@ -80,6 +80,17 @@ public final class MailService {
         return config.getProperty("GMAIL_ADDRESS", "");
     }
 
+    /** Inbox refresh cadence (seconds) while the mail GUI is open.
+     *  Configurable via MAIL_POLL_SECONDS in .env. Clamped to [1, 300]. */
+    public int pollSeconds() {
+        try {
+            int n = Integer.parseInt(config.getProperty("MAIL_POLL_SECONDS", "1"));
+            return Math.max(1, Math.min(300, n));
+        } catch (NumberFormatException e) {
+            return 1;
+        }
+    }
+
     /**
      * Fire-and-forget connection warm-up. Call from mod init so the first
      * {@code /mail} open doesn't eat the 1-3 s IMAP handshake. Also prefetches
@@ -380,6 +391,7 @@ public final class MailService {
             "GMAIL_ADDRESS", "GMAIL_APP_PASSWORD",
             "IMAP_HOST", "SMTP_HOST", "SMTP_PORT",
             "MAIL_ARCHIVE_FOLDER", "MAIL_TRASH_FOLDER",
+            "MAIL_POLL_SECONDS",
         };
         for (String k : keys) {
             String v = System.getenv(k);

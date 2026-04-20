@@ -50,7 +50,6 @@ public class MailScreen extends Screen {
     private static final int MUTED_COLOR = 0xFF888888;
     private static final int LABEL_COLOR = 0xFFAAAA00;
 
-    private static final int POLL_INTERVAL_TICKS = 600;      // 30 seconds
     private static final int BODY_LINE_HEIGHT = 10;
 
     private static final Pattern URL_PATTERN = Pattern.compile(
@@ -78,6 +77,7 @@ public class MailScreen extends Screen {
     private List<InboxItem> items = new ArrayList<>();
     private int listScroll = 0;
     private int tickCount = 0;
+    private final int pollIntervalTicks;
     private String statusText = "Loading\u2026";
     private String accountEmail = "";
     private boolean authenticated = false;
@@ -98,6 +98,8 @@ public class MailScreen extends Screen {
     public MailScreen(MailClient client) {
         super(Text.literal("Mailbox"));
         this.client = client;
+        // 20 ticks = 1 second; read cadence from .env (MAIL_POLL_SECONDS, default 1).
+        this.pollIntervalTicks = com.minecraftuse.mail.MailService.get().pollSeconds() * 20;
     }
 
     @Override
@@ -204,7 +206,7 @@ public class MailScreen extends Screen {
     @Override
     public void tick() {
         tickCount++;
-        if (detail == null && tickCount >= POLL_INTERVAL_TICKS) {
+        if (detail == null && !composing && tickCount >= pollIntervalTicks) {
             tickCount = 0;
             refreshInbox();
         }
@@ -420,6 +422,10 @@ public class MailScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // When composing, let widget clicks (Send, Cancel, fields) pass straight
+        // through to super — don't intercept anything as a list / URL click.
+        if (composing) return super.mouseClicked(mouseX, mouseY, button);
+
         // URL clicks in the detail body
         if (detail != null && button == 0 && !detailWrappedBody.isEmpty()) {
             int ph = panelHeight();

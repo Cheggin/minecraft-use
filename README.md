@@ -264,6 +264,7 @@ SMTP_HOST=smtp.yourhost.com        # default: smtp.gmail.com
 SMTP_PORT=587                       # default: 587
 MAIL_ARCHIVE_FOLDER=[Gmail]/All Mail  # where Archive sends messages
 MAIL_TRASH_FOLDER=[Gmail]/Trash       # where Trash sends messages
+MAIL_POLL_SECONDS=1                   # inbox refresh cadence while /mail is open (clamped 1–300)
 ```
 
 ## CLI
