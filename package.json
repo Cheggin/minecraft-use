@@ -1,6 +1,6 @@
 {
   "name": "@reaganhsu/minecraft-code",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Turn Minecraft into a coding workstation. Spawn Claude Code as a villager, open VS Code in-game, find schematics on the web, and build them in your world — all from chat.",
   "keywords": [
     "minecraft",
@@ -19,7 +19,10 @@
     "coding",
     "terminal",
     "spotify",
-    "jukebox"
+    "jukebox",
+    "email",
+    "imap",
+    "gmail"
   ],
   "homepage": "https://github.com/Cheggin/minecraft-use",
   "repository": {

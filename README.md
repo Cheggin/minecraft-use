@@ -137,6 +137,7 @@ A Minecraft-styled email client that reads your Gmail (or any IMAP inbox) and le
 - **Detail view** — click a row → full plain-text body (HTML stripped). URLs are underlined and clickable (opens in your browser with MC's standard confirm-prompt).
 - **Actions** — Mark read/unread, Archive (moves to All Mail), Trash, Reply.
 - **Compose** — new message from the inbox toolbar, or prefilled as a quoted reply from the detail view.
+- **Attachments** — listed below the body when present. Click a row to save to `~/Downloads/mailbox/`; the chat log shows a clickable path that opens the file in Finder.
 - **Fuzzy filter** — the persistent search bar filters the loaded rows locally (same subsequence matcher as the Spotify tabs).
 - **In-process** — IMAP/SMTP run inside the mod via bundled Jakarta Mail. No Python sidecar needed for `/mail`.
 
