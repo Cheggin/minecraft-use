@@ -206,7 +206,7 @@ public class MailScreen extends Screen {
     @Override
     public void tick() {
         tickCount++;
-        if (detail == null && !composing && tickCount >= pollIntervalTicks) {
+        if (tickCount >= pollIntervalTicks) {
             tickCount = 0;
             refreshInbox();
         }
