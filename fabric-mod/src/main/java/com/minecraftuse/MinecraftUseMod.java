@@ -20,6 +20,7 @@ import com.minecraftuse.commands.TmuxSendCommand;
 import com.minecraftuse.commands.UndoCommand;
 import com.minecraftuse.gui.CatalogScreen;
 import com.minecraftuse.ProfileSoundManager;
+import com.minecraftuse.mail.MailService;
 import com.minecraftuse.network.MailClient;
 import com.minecraftuse.network.SidecarClient;
 import com.minecraftuse.network.SpotifyClient;
@@ -50,6 +51,7 @@ public class MinecraftUseMod implements ClientModInitializer {
         LOGGER.info("Minecraft Use mod initializing...");
         ModSounds.register();
         ProfileSoundManager.init();
+        MailService.get().warmUp();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             AgentChatCommand.register(dispatcher);

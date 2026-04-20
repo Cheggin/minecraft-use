@@ -22,8 +22,10 @@ dependencies {
     // HTTP client for sidecar communication
     implementation "com.google.code.gson:gson:2.11.0"
 
-    // Mail (IMAP + SMTP) — self-contained javax.mail bundle, no sidecar needed
+    // Mail (IMAP + SMTP) — javax.mail + its javax.activation runtime dep.
+    // Both are bundled into the final mod JAR via fabric-loom include().
     implementation include("com.sun.mail:javax.mail:1.6.2")
+    implementation include("com.sun.activation:javax.activation:1.2.0")
     // HTML → text for email body rendering
     implementation include("org.jsoup:jsoup:1.18.3")
 

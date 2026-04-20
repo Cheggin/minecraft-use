@@ -17,6 +17,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Direct IMAP + SMTP mail handling. Replaces the Python sidecar implementation.
@@ -41,9 +44,31 @@ public final class MailService {
     private final Properties config;
     private Store store;
     private IMAPFolder inbox;
+    private ScheduledExecutorService keepAlive;
 
     private MailService() {
         this.config = loadConfig();
+    }
+
+    /** Send a NOOP periodically so Gmail doesn't drop the idle connection. */
+    private void startKeepAlive() {
+        if (keepAlive != null) return;
+        keepAlive = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "minecraft-use-mail-keepalive");
+            t.setDaemon(true);
+            return t;
+        });
+        keepAlive.scheduleAtFixedRate(() -> {
+            synchronized (MailService.this) {
+                try {
+                    if (store != null && store.isConnected() && inbox != null && inbox.isOpen()) {
+                        inbox.doCommand(p -> { p.simpleCommand("NOOP", null); return null; });
+                    }
+                } catch (Exception ignored) {
+                    disconnectQuietly();
+                }
+            }
+        }, 4, 4, TimeUnit.MINUTES);
     }
 
     public boolean isConfigured() {
@@ -53,6 +78,36 @@ public final class MailService {
 
     public String address() {
         return config.getProperty("GMAIL_ADDRESS", "");
+    }
+
+    /**
+     * Fire-and-forget connection warm-up. Call from mod init so the first
+     * {@code /mail} open doesn't eat the 1-3 s IMAP handshake. Also prefetches
+     * the first batch of envelopes so the inbox screen renders instantly.
+     * Safe to call before credentials are configured — silently no-ops.
+     */
+    public void warmUp() {
+        if (!isConfigured()) return;
+        Thread t = new Thread(() -> {
+            try {
+                synchronized (this) {
+                    IMAPFolder f = openInbox();
+                    int total = f.getMessageCount();
+                    if (total > 0) {
+                        int limit = 25;
+                        int start = Math.max(1, total - limit + 1);
+                        Message[] msgs = f.getMessages(start, total);
+                        FetchProfile fp = new FetchProfile();
+                        fp.add(FetchProfile.Item.ENVELOPE);
+                        fp.add(FetchProfile.Item.FLAGS);
+                        fp.add(UIDFolder.FetchProfileItem.UID);
+                        f.fetch(msgs, fp);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }, "minecraft-use-mail-warmup");
+        t.setDaemon(true);
+        t.start();
     }
 
     // ---------- public API ----------
@@ -68,6 +123,7 @@ public final class MailService {
             FetchProfile fp = new FetchProfile();
             fp.add(FetchProfile.Item.ENVELOPE);
             fp.add(FetchProfile.Item.FLAGS);
+            fp.add(UIDFolder.FetchProfileItem.UID);  // prefetch UIDs in the same round-trip
             f.fetch(msgs, fp);
 
             List<InboxItem> out = new ArrayList<>(msgs.length);
@@ -195,6 +251,7 @@ public final class MailService {
         Session session = Session.getInstance(props);
         store = session.getStore("imaps");
         store.connect(host, addr, pw);
+        startKeepAlive();
     }
 
     private void disconnectQuietly() {
