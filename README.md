@@ -12,6 +12,7 @@ Turn Minecraft into a coding workstation. Spawn Claude Code as a villager, open 
 /browser-use get-schematics castle → download builds
 /build 27283             → place schematic via Litematica
 /agent-tell alex shawn "review this" → agents talk to each other
+/spotify                 → open the in-game Spotify jukebox
 ```
 
 ## Quick Start
@@ -107,6 +108,23 @@ tmux session "minecraft-code"
 | `/build list` | List schematics from Convex database |
 | `/build <name>` | Download schematic for Litematica placement |
 
+### Spotify Jukebox
+| Command | Description |
+|---------|-------------|
+| `/spotify` | Open the in-game Spotify jukebox |
+
+A Minecraft-styled UI that controls your Spotify via the Web API. Music discs replace album art, and the panel matches the vanilla GUI aesthetic.
+
+- **Now Playing** — track / artist / album / playlist context, progress bar, play/pause/next/previous, volume slider
+- **SEARCH** tab — query the full Spotify catalog (Enter to run)
+- **PLAYLISTS** tab — your private + collaborative playlists; click one to drill into its tracks
+- **LIKED** tab — your Liked Songs
+- **QUEUE** tab — what's coming up next on Spotify
+- The search field doubles as a fuzzy filter on every non-search tab (e.g. PLAYLISTS → "tlr swft")
+- Clicking a track plays it; sidecar walks neighbouring tracks via Spotify Connect — no focus stolen from Minecraft
+
+**Requires Spotify Premium** for playback control via the Web API.
+
 ## Agent Villagers
 
 Spawn AI agents as Minecraft mobs that follow you around:
@@ -191,6 +209,23 @@ If you're using your own Convex deployment, update the `CONVEX_URL` in:
 - `sidecar/browser_repl.py`
 - `fabric-mod/src/main/java/com/minecraftuse/commands/BuildCommand.java`
 - `fabric-mod/src/main/java/com/minecraftuse/catalog/CatalogIndex.java`
+
+### 5. Spotify (optional, for `/spotify`)
+
+Spotify Premium is required for playback control via the Web API.
+
+1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) → **Create App**
+2. Add this exact Redirect URI in the app's settings:
+   ```
+   http://127.0.0.1:8765/spotify/auth/callback
+   ```
+3. Copy the **Client ID** and **Client Secret** into your `.env`:
+   ```env
+   SPOTIFY_CLIENT_ID=...
+   SPOTIFY_CLIENT_SECRET=...
+   SPOTIFY_REDIRECT_URI=http://127.0.0.1:8765/spotify/auth/callback
+   ```
+4. In Minecraft, run `/spotify` and click **Sign in to Spotify** — your browser opens, you approve, the GUI auto-detects when the token is saved (~1s). The token persists in `sidecar/.spotify-token.json` and refreshes itself.
 
 ## CLI
 
