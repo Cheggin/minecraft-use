@@ -22,6 +22,11 @@ dependencies {
     // HTTP client for sidecar communication
     implementation "com.google.code.gson:gson:2.11.0"
 
+    // Mail (IMAP + SMTP) — self-contained javax.mail bundle, no sidecar needed
+    implementation include("com.sun.mail:javax.mail:1.6.2")
+    // HTML → text for email body rendering
+    implementation include("org.jsoup:jsoup:1.18.3")
+
     // MCEF — Chromium Embedded Framework for in-game web rendering
     modImplementation files("run/mods/mcef-fabric-2.1.6-1.21.1.jar")
 

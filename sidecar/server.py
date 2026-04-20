@@ -20,14 +20,12 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 from browser_search import SchematicSearcher
-from email_bridge import router as email_router
 from spotify_bridge import router as spotify_router
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 app = FastAPI(title="Minecraft Use Sidecar", version="1.0.0")
 app.include_router(spotify_router)
-app.include_router(email_router)
 
 CACHE_DIR = Path(__file__).parent / "schema_cache"
 CACHE_DIR.mkdir(exist_ok=True)
