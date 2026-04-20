@@ -255,7 +255,7 @@ The mail client uses IMAP + SMTP via an **app password**, not OAuth. Works with 
    GMAIL_ADDRESS=you@gmail.com
    GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
    ```
-4. In Minecraft, run `/mail`. The inbox loads in ~1 s after the first IMAP handshake.
+4. In Minecraft, run `/mail`. The mod warms the IMAP connection and prefetches the first 25 envelopes at launch, and keeps the connection alive with a periodic NOOP, so the inbox renders near-instantly on every open.
 
 **Different provider?** Override any of these in `.env`:
 ```env
